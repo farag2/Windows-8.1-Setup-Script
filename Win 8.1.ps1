@@ -528,3 +528,4 @@ Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.contact\ShellNew" -Recurse -Forc
 # Удалить пункт "Создать архив ZIP" из контекстного меню
 Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.zip\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
 Stop-Process -ProcessName explorer
+# https://www.reddit.com/r/insurgency/
