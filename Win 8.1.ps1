@@ -390,7 +390,6 @@ IF ($drives)
 Add-MpPreference -ExclusionPath $env:SystemRoot\KMS\bin\SppExtComObjPatcher.exe -Force
 Add-MpPreference -ExclusionPath $env:SystemRoot\KMS\bin\SppExtComObjPatcher.dll -Force
 Add-MpPreference -ExclusionPath $env:SystemRoot\KMS\bin -Force
-Add-MpPreference -ExclusionPath $env:TEMP\KMSAuto_Files\bin -Force
 # Отключение справки по F1
 IF (!(Test-Path "HKCU:\Software\Classes\Typelib\{8cec5860-07a1-11d9-b15e-000d56bfe6ee}\1.0\0\win64"))
 {
@@ -528,4 +527,3 @@ Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.contact\ShellNew" -Recurse -Forc
 # Удалить пункт "Создать архив ZIP" из контекстного меню
 Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.zip\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
 Stop-Process -ProcessName explorer
-# https://www.reddit.com/r/insurgency/
