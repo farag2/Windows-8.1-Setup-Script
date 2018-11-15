@@ -387,9 +387,6 @@ IF ($drives)
 		Add-MpPreference -ExclusionPath $drive\Программы\Прочее -Force
 	}
 }
-Add-MpPreference -ExclusionPath $env:SystemRoot\KMS\bin\SppExtComObjPatcher.exe -Force
-Add-MpPreference -ExclusionPath $env:SystemRoot\KMS\bin\SppExtComObjPatcher.dll -Force
-Add-MpPreference -ExclusionPath $env:SystemRoot\KMS\bin -Force
 # Отключение справки по F1
 IF (!(Test-Path "HKCU:\Software\Classes\Typelib\{8cec5860-07a1-11d9-b15e-000d56bfe6ee}\1.0\0\win64"))
 {
@@ -526,4 +523,11 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVers
 Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.contact\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
 # Удалить пункт "Создать архив ZIP" из контекстного меню
 Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.zip\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
+# Удалить пункт "Печать" из контекстного меню для bat- и cmd-файлов
+Remove-Item "Registry::HKEY_CLASSES_ROOT\batfile\shell\print\*" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item "Registry::HKEY_CLASSES_ROOT\cmdfile\shell\print\*" -Recurse -Force -ErrorAction SilentlyContinue
+# Удалить пункт "Создать Документ в формате RTF" из контекстного меню
+Remove-Item "Registry::HKEY_CLASSES_ROOT\.rtf\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
+# Удалить пункт "Создать Точечный рисунок" из контекстного меню
+Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.bmp\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
 Stop-Process -ProcessName explorer
