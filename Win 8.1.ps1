@@ -109,12 +109,6 @@ New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Attachments -Name SaveZoneInformation -Value 1 -Force
 # Отключение SmartScreen для приложений и файлов
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name SmartScreenEnabled -Type String -Value Off -Force
-# Отключение SmartScreen в IE
-IF (!(Test-Path "HKCU:\Software\Microsoft\Internet Explorer\PhishingFilter"))
-{
-	New-Item -Path "HKCU:\Software\Microsoft\Internet Explorer\PhishingFilter" -Force
-}
-New-ItemProperty -Path "HKCU:\Software\Microsoft\Internet Explorer\PhishingFilter" -Name EnabledV9 -Value 0 -Force
 # Сохранение скриншотов по Win+PrtScr на Рабочем столе
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{b7bede81-df94-4682-a7d8-57a52620b86f}" -Name RelativePath -Type String -Value $env:USERPROFILE\Desktop -Force
 # Отключение залипания клавиши Shift после 5 нажатий
@@ -148,8 +142,6 @@ $features = @(
 'MicrosoftWindowsPowershellV2Root',
 # Отключение службы XPS
 'Printing-XPSServices-Features',
-# Отключение и удаление поддержки протокола SMB1 на клиенте
-# 'SMB1Protocol',
 # Отключение службы "Клиент рабочих папок"
 'WorkFolders-Client',
 # Отключение просмотрщика XPS
@@ -165,20 +157,20 @@ New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\
 New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\print\command -Name "(Default)" -Type ExpandString -Value "%SystemRoot%\System32\rundll32.exe `"%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll`", ImageView_Fullscreen %1" -Force
 New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\open\DropTarget -Name Clsid -Type String -Value "{60fd46de-f830-4894-a628-6fa81bc0190d}" -Force
 # Ассоциация со Средством просмотра фотографий Windows
-cmd.exe /c 'ftype Paint.Picture=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1'
-cmd.exe /c 'ftype jpegfile=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1'
-cmd.exe /c 'ftype pngfile=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1'
-cmd.exe /c 'ftype TIFImage.Document=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1'
-cmd.exe /c "assoc .bmp=Paint.Picture"
-cmd.exe /c "assoc .jpg=jpegfile"
-cmd.exe /c "assoc .jpeg=jpegfile"
-cmd.exe /c "assoc .png=pngfile"
-cmd.exe /c "assoc .tif=TIFImage.Document"
-cmd.exe /c "assoc .tiff=TIFImage.Document"
-cmd.exe /c "assoc Paint.Picture\DefaultIcon=%SystemRoot%\System32\imageres.dll,-70"
-cmd.exe /c "assoc jpegfile\DefaultIcon=%SystemRoot%\System32\imageres.dll,-72"
-cmd.exe /c "assoc pngfile\DefaultIcon=%SystemRoot%\System32\imageres.dll,-71"
-cmd.exe /c "assoc TIFImage.Document\DefaultIcon=%SystemRoot%\System32\imageres.dll,-122"
+cmd.exe /c ftype Paint.Picture=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1
+cmd.exe /c ftype jpegfile=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1
+cmd.exe /c ftype pngfile=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1
+cmd.exe /c ftype TIFImage.Document=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1
+cmd.exe /c assoc .bmp=Paint.Picture
+cmd.exe /c assoc .jpg=jpegfile
+cmd.exe /c assoc .jpeg=jpegfile
+cmd.exe /c assoc .png=pngfile
+cmd.exe /c assoc .tif=TIFImage.Document
+cmd.exe /c assoc .tiff=TIFImage.Document
+cmd.exe /c assoc Paint.Picture\DefaultIcon=%SystemRoot%\System32\imageres.dll,-70
+cmd.exe /c assoc jpegfile\DefaultIcon=%SystemRoot%\System32\imageres.dll,-72
+cmd.exe /c assoc pngfile\DefaultIcon=%SystemRoot%\System32\imageres.dll,-71
+cmd.exe /c assoc TIFImage.Document\DefaultIcon=%SystemRoot%\System32\imageres.dll,-122
 # Отключение OneDrive
 IF (!(Test-Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive))
 {
@@ -345,14 +337,6 @@ $params = @{
 "Settings"	= $settings
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
-# Домашняя страница в IE
-New-ItemProperty -Path "HKCU:\Software\Microsoft\Internet Explorer\Main" -Name "Start Page" -Type String -Value https://yandex.ru -Force
-# Запускать IE с вкладками с последнего сеанса просмотра
-IF (!(Test-Path "HKCU:\Software\Microsoft\Internet Explorer\ContinuousBrowsing"))
-{
-	New-Item -Path "HKCU:\Software\Microsoft\Internet Explorer\ContinuousBrowsing" -Force
-}
-New-ItemProperty -Path "HKCU:\Software\Microsoft\Internet Explorer\ContinuousBrowsing" -Name Enabled -Value 1 -Force
 # Установить схему управления питания для стационарного ПК и ноутбука
 IF (((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType) -eq 1)
 {
@@ -365,8 +349,6 @@ Else
 # Использовать последнюю установленную версию .NET Framework для всех приложений
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\.NETFramework -Name OnlyUseLatestCLR -Value 1 -Force
 New-ItemProperty -Path HKLM:\SOFTWARE\Wow6432Node\Microsoft\.NETFramework -Name OnlyUseLatestCLR -Value 1 -Force
-# Использовать сценарий автоматической настройки прокси в IE
-New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings" -Name AutoConfigURL -Type String -Value https://antizapret.prostovpn.org/proxy.pac -Force
 # Включение Num Lock при загрузке
 New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Control Panel\Keyboard" -Name InitialKeyboardIndicators -Type String -Value 2147483650 -Force
 # Добавить в исключение Windows Defender папку
@@ -399,27 +381,20 @@ IF ($taskmgr)
 {
 	$taskmgr.CloseMainWindow()
 }
-Start-Process -FilePath Taskmgr
-Start-Sleep -s 1
-$taskmgr = Get-Process Taskmgr -ErrorAction SilentlyContinue
-IF ($taskmgr)
+$taskmgr = Start-Process -WindowStyle Hidden -FilePath taskmgr.exe -PassThru
+Do
 {
-	$taskmgr.CloseMainWindow()
+	Start-Sleep -Milliseconds 100
+	$preferences = Get-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager -Name Preferences -ErrorAction SilentlyContinue
 }
-Start-Sleep -s 1
-$preferences = Get-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager -Name Preferences -ErrorAction SilentlyContinue
+Until ($preferences)
+Stop-Process $taskmgr
 $preferences.Preferences[28] = 0
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager -Name Preferences -Type Binary -Value $preferences.Preferences -Force
 # Запретить отключение Ethernet-адаптера для экономии энергии
-Foreach ($NIC in (Get-NetAdapter -Physical))
-{
-	$PowerSaving = Get-CimInstance -ClassName MSPower_DeviceEnable -Namespace root\wmi | Where-Object {$_.InstanceName -match [Regex]::Escape($NIC.PnPDeviceID)}
-	IF ($PowerSaving.Enable)
-	{
-		$PowerSaving.Enable = $false
-		$PowerSaving | Set-CimInstance
-	}
-}
+$adapter = Get-NetAdapter -Physical | Get-NetAdapterPowerManagement
+$adapter.AllowComputerToTurnOffDevice = 'Disabled'
+$adapter | Set-NetAdapterPowerManagement
 # Установка крупных значков в панели управления
 IF (!(Test-Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel))
 {
@@ -447,12 +422,6 @@ IF (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International")
 New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International" -Name BlockUserInputMethodsForSignIn -Value 1 -Force
 New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 1 -Type String -Value 00000409 -Force
 New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 2 -Type String -Value 00000419 -Force
-# Не выполнять мастер запуска IE в первый раз
-IF (!(Test-Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer\Main"))
-{
-	New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer\Main" -Force
-}
-New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Internet Explorer\Main" -Name DisableFirstRunCustomize -Value 1 -Force
 # Не показывать анимацию при первом входе в систему
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name EnableFirstLogonAnimation -Value 0 -Force
 # Снятие ограничения на одновременное открытие более 15 элементов
