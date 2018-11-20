@@ -110,7 +110,9 @@ New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\
 # Отключение SmartScreen для приложений и файлов
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name SmartScreenEnabled -Type String -Value Off -Force
 # Сохранение скриншотов по Win+PrtScr на Рабочем столе
-New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{b7bede81-df94-4682-a7d8-57a52620b86f}" -Name RelativePath -Type String -Value $env:USERPROFILE\Desktop -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{b7bede81-df94-4682-a7d8-57a52620b86f}" -Name RelativePath -Type String -Value %USERPROFILE%\Desktop -Force
+# Установка качества фона рабочего стола на 100 %
+New-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name JPEGImportQuality -Value 100 -Force
 # Отключение залипания клавиши Shift после 5 нажатий
 New-ItemProperty -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name Flags -Type String -Value 506 -Force
 # Отключение отображения вкладки "Предыдущие версии" в свойствах файлов
@@ -132,20 +134,20 @@ Get-AppxProvisionedPackage -Online | Remove-AppxProvisionedPackage -Online -Erro
 # Отключение компонентов
 $features = @(
 # Отключение службы Факсы и сканирование
-'FaxServicesClientPackage',
+"FaxServicesClientPackage",
 # Отключение компонентов прежних версий
-'LegacyComponents',
+"LegacyComponents",
 # Отключение компонентов работы с мультимедиа
-'MediaPlayback',
+"MediaPlayback",
 # Отключение PowerShell 2.0
-'MicrosoftWindowsPowerShellV2',
-'MicrosoftWindowsPowershellV2Root',
+"MicrosoftWindowsPowerShellV2",
+"MicrosoftWindowsPowershellV2Root",
 # Отключение службы XPS
-'Printing-XPSServices-Features',
+"Printing-XPSServices-Features",
 # Отключение службы "Клиент рабочих папок"
-'WorkFolders-Client',
+"WorkFolders-Client",
 # Отключение просмотрщика XPS
-'Xps-Foundation-Xps-Viewer')
+"Xps-Foundation-Xps-Viewer")
 Foreach ($feature in $features)
 {
 	Disable-WindowsOptionalFeature -Online -FeatureName $feature -NoRestart
@@ -193,7 +195,7 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Script Host\Settings" -
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name EnableAutoTray -Value 0 -Force
 # Отключить брандмауэр
 Set-NetFirewallProfile -Enabled False -ErrorAction SilentlyContinue
-# Включение в Планировщике задач запуска очистки обновлений Windows
+# Включить в Планировщике задач запуска очистки обновлений Windows
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Update Cleanup" -Name StateFlags1337 -Value 2 -Force
 $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\cleanmgr.exe" -Argument "/sagerun:1337"
 $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 90 -At 9am
@@ -204,8 +206,8 @@ $params = @{
 "Trigger"	= $trigger
 "Settings"	= $settings
 }
-Register-ScheduledTask @Params -RunLevel Highest -Force
-# Включение в Планировщике задач очистки временной папки
+Register-ScheduledTask @Params -User $env:USERNAME -RunLevel Highest -Force
+# Включить в Планировщике задач очистки временной папки
 $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument 'Get-ChildItem -Path "$env:TEMP" -Recurse -Force | Remove-Item -Recurse -Force'
 $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 61 -At 9am
 $settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
@@ -216,31 +218,15 @@ $params = @{
 "Settings"	= $settings
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
-# Включение в Планировщике задач очистки папки %SYSTEMROOT%\SoftwareDistribution\Download
+# Включить в Планировщике задач очистки папки %SYSTEMROOT%\SoftwareDistribution\Download
 $xml = 'Программы\Прочее\xml\SoftwareDistribution.xml'
 filter Get-FirstResolvedPath
 {
-	(Get-Disk | Where-Object BusType -eq USB | Get-Partition | Get-Volume).DriveLetter | ForEach-Object {$_ + ':\'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue | Select-Object -First 1
+	(Get-Disk | Where-Object BusType -eq USB | Get-Partition).DriveLetter | ForEach-Object {$_ + ':\'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue | Select-Object -First 1
 }
 $xml | Get-FirstResolvedPath | Get-Item | Get-Content -Raw | Register-ScheduledTask -TaskName "SoftwareDistribution" -Force
-<#
-$action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
-`$getservice = Get-Service -Name wuauserv
-`$getservice.WaitForStatus('Stopped', '01:00:00')
-Get-ChildItem -Path $env:SystemRoot\SoftwareDistribution\Download -Recurse -Force | Remove-Item -Recurse -Force
-"@
-$trigger = New-ScheduledTaskTrigger -Weekly -At 9am -DaysOfWeek Thursday -WeeksInterval 4
-$settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
-$params = @{
-"TaskName"	= "SoftwareDistribution"
-"Action"	= $action
-"Trigger"	= $trigger
-"Settings"	= $settings
-}
-Register-ScheduledTask @Params -User System -RunLevel Highest -Force
-#>
-# Включение в Планировщике задач удаление устаревших обновлений Office
-$drives = (Get-Disk | Where-Object BusType -ne USB | Where-Object IsBoot -ne True | Get-Partition | Get-Volume).DriveLetter | ForEach-Object {$_ + ':'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue
+# Включить в Планировщике задач удаление устаревших обновлений Office
+$drives = (Get-Disk | Where-Object BusType -ne USB | Where-Object IsBoot -ne True | Get-Partition).DriveLetter | ForEach-Object {$_ + ':'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue
 IF ($drives)
 {
 	IF (!(Test-Path D:\Программы\Прочее))
@@ -251,28 +237,12 @@ IF ($drives)
 	$xml = 'Программы\Прочее\xml\Office.xml'
 	filter Get-FirstResolvedPath
 	{
-		(Get-Disk | Where-Object BusType -eq USB | Get-Partition | Get-Volume).DriveLetter | ForEach-Object {$_ + ':\'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue | Select-Object -First 1
+		(Get-Disk | Where-Object BusType -eq USB | Get-Partition).DriveLetter | ForEach-Object {$_ + ':\'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue | Select-Object -First 1
 	}
 	$bat | Get-FirstResolvedPath | Copy-Item -Destination D:\Программы\Прочее -Force
 	$xml | Get-FirstResolvedPath | Get-Item | Get-Content -Raw | Register-ScheduledTask -TaskName "Office" -Force
 }
-<#
-$action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
-`$getservice = Get-Service -Name wuauserv
-`$getservice.WaitForStatus('Stopped', '01:00:00')
-Start-Process -FilePath D:\Программы\Прочее\Office_task.bat
-"@
-$trigger = New-ScheduledTaskTrigger -Weekly -At 9am -DaysOfWeek Thursday -WeeksInterval 4
-$settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
-$params = @{
-"TaskName"	= "Office"
-"Action"	= $action
-"Trigger"	= $trigger
-"Settings"	= $settings
-}
-Register-ScheduledTask @Params -User System -RunLevel Highest -Force
-#>
-# Включение в Планировщике задач очистки папки %SYSTEMROOT%\LiveKernelReports
+# Включить в Планировщике задач очистки папки %SYSTEMROOT%\LiveKernelReports
 $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
 `$dir = '$env:SystemRoot\LiveKernelReports'
 `$foldersize = (Get-ChildItem -Path `$dir -Recurse | Measure-Object -Property Length -Sum).Sum/1MB
@@ -290,7 +260,7 @@ $params = @{
 "Settings"	= $settings
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
-# Включение в Планировщике задач очистки папки %SYSTEMROOT%\Logs\CBS
+# Включить в Планировщике задач очистки папки %SYSTEMROOT%\Logs\CBS
 $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
 `$dir = '$env:SystemRoot\Logs\CBS'
 `$foldersize = (Get-ChildItem -Path `$dir -Recurse | Measure-Object -Property Length -Sum).Sum/1MB
@@ -308,7 +278,7 @@ $params = @{
 "Settings"	= $settings
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
-# Включение в Планировщике задач очистки папки %SYSTEMROOT%\Installer\$PatchCache$\Managed
+# Включить в Планировщике задач очистки папки %SYSTEMROOT%\Installer\$PatchCache$\Managed
 $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument 'Get-ChildItem -Path "$env:SystemRoot\Installer\`$PatchCache$\Managed" -Recurse -Force | Remove-Item -Recurse -Force'
 $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 120 -At 9am
 $settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
@@ -319,7 +289,7 @@ $params = @{
 "Settings"	= $settings
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
-# Включение в Планировщике задач очистки папки %ProgramData%\Microsoft\Windows\WER
+# Включить в Планировщике задач очистки папки %ProgramData%\Microsoft\Windows\WER
 $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
 `$dir = '$env:ProgramData\Microsoft\Windows\WER\ReportQueue'
 `$foldersize = (Get-ChildItem -Path `$dir -Recurse -Force | Measure-Object -Property Length -Sum).Sum/1MB
@@ -338,7 +308,7 @@ $params = @{
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 # Установить схему управления питания для стационарного ПК и ноутбука
-IF (((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType) -eq 1)
+IF ((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType -eq 1)
 {
 	powercfg /s 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
 }
@@ -349,7 +319,7 @@ Else
 # Использовать последнюю установленную версию .NET Framework для всех приложений
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\.NETFramework -Name OnlyUseLatestCLR -Value 1 -Force
 New-ItemProperty -Path HKLM:\SOFTWARE\Wow6432Node\Microsoft\.NETFramework -Name OnlyUseLatestCLR -Value 1 -Force
-# Включение Num Lock при загрузке
+# Включить Num Lock при загрузке
 New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Control Panel\Keyboard" -Name InitialKeyboardIndicators -Type String -Value 2147483650 -Force
 # Добавить в исключение Windows Defender папку
 $file = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\Modules\Defender\Defender.psd1"
@@ -361,7 +331,7 @@ cmd.exe /c "icacls %WINDIR%\system32\WindowsPowerShell\v1.0\Modules\Defender\Def
     replace("'Remove-MpThreat',", "'Remove-MpThreat')").
     replace("'Start-MpWDOScan')", "")
 } | Out-File $file
-$drives = (Get-Disk | Where-Object IsBoot -ne True | Get-Partition | Get-Volume).DriveLetter | ForEach-Object {$_ + ':'}
+$drives = (Get-Disk | Where-Object IsBoot -ne True | Get-Partition).DriveLetter | ForEach-Object {$_ + ':'}
 IF ($drives)
 {
 	Foreach ($drive In $drives)
@@ -393,7 +363,7 @@ $preferences.Preferences[28] = 0
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager -Name Preferences -Type Binary -Value $preferences.Preferences -Force
 # Запретить отключение Ethernet-адаптера для экономии энергии
 $adapter = Get-NetAdapter -Physical | Get-NetAdapterPowerManagement
-$adapter.AllowComputerToTurnOffDevice = 'Disabled'
+$adapter.AllowComputerToTurnOffDevice = "Disabled"
 $adapter | Set-NetAdapterPowerManagement
 # Установка крупных значков в панели управления
 IF (!(Test-Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel))
@@ -481,10 +451,10 @@ New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name
 Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name Extended -Force
 New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name SuppressionPolicyEx -Type String -Value "{F211AA05-D4DF-4370-A2A0-9F19C09756A7}" -Force
 New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser\command -Name DelegateExecute -Type String -Value "{ea72d00e-4960-42fa-ba92-7792a7944c1d}" -Force
-# Включение доступа к сетевым дискам при включенном режиме одобрения администратором при доступе из программ, запущенных с повышенными правами
+# Включить доступа к сетевым дискам при включенном режиме одобрения администратором при доступе из программ, запущенных с повышенными правами
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name EnableLinkedConnections -Value 1 -Force
-# Включение длинных путей Win32
-New-ItemProperty -Path HKLM:\SYSTEM\ControlSet001\Control\FileSystem -Name LongPathsEnabled -Value 1 -Force
+# Включить длинных путей Win32
+New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name LongPathsEnabled -Value 1 -Force
 # Отключить удаление кэша миниатюр
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache" -Name Autorun -Value 0 -Force
 New-ItemProperty -Path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache" -Name Autorun -Value 0 -Force
@@ -493,10 +463,50 @@ Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.contact\ShellNew" -Recurse -Forc
 # Удалить пункт "Создать архив ZIP" из контекстного меню
 Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.zip\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
 # Удалить пункт "Печать" из контекстного меню для bat- и cmd-файлов
-Remove-Item "Registry::HKEY_CLASSES_ROOT\batfile\shell\print\*" -Recurse -Force -ErrorAction SilentlyContinue
-Remove-Item "Registry::HKEY_CLASSES_ROOT\cmdfile\shell\print\*" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item "Registry::HKEY_CLASSES_ROOT\batfile\shell\print" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item "Registry::HKEY_CLASSES_ROOT\cmdfile\shell\print" -Recurse -Force -ErrorAction SilentlyContinue
 # Удалить пункт "Создать Документ в формате RTF" из контекстного меню
 Remove-Item "Registry::HKEY_CLASSES_ROOT\.rtf\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
 # Удалить пункт "Создать Точечный рисунок" из контекстного меню
 Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.bmp\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
+# Переопределить расположение папок "Загрузки" и "Документы"
+IF (!(Test-Path D:\Загрузки))
+{
+	New-Item -Path D:\Загрузки -Type Directory -Force
+}
+IF (!(Test-Path D:\Документы))
+{
+	New-Item -Path D:\Документы -Type Directory -Force
+}
+function KnownFolderPath
+{
+	Param (
+		[Parameter(Mandatory = $true)]
+		[ValidateSet('Documents', 'Downloads')]
+		[string]$KnownFolder,
+
+		[Parameter(Mandatory = $true)]
+		[string]$Path
+    )
+	$KnownFolders = @{
+		'Documents' = @('FDD39AD0-238F-46AF-ADB4-6C85480369C7','f42ee2d3-909f-4907-8871-4c22fc0bf756');
+		'Downloads' = @('374DE290-123F-4565-9164-39C4925E467B','7d83ee9b-2244-4e70-b1f5-5393042af1e4');
+	}
+	$Type = ([System.Management.Automation.PSTypeName]'KnownFolders').Type
+	$Signature = @'
+	[DllImport("shell32.dll")]
+	public extern static int SHSetKnownFolderPath(ref Guid folderId, uint flags, IntPtr token, [MarshalAs(UnmanagedType.LPWStr)] string path);
+'@
+	$Type = Add-Type -MemberDefinition $Signature -Name 'KnownFolders' -Namespace 'SHSetKnownFolderPath' -PassThru
+	#  return $Type::SHSetKnownFolderPath([ref]$KnownFolders[$KnownFolder], 0, 0, $Path)
+	ForEach ($guid in $KnownFolders[$KnownFolder])
+	{
+		$Type::SHSetKnownFolderPath([ref]$guid, 0, 0, $Path)
+	}
+	Attrib +r $Path
+}
+KnownFolderPath -KnownFolder Downloads -Path "$env:SystemDrive\Загрузки"
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "%SystemDrive%\Загрузки" -Force
+KnownFolderPath -KnownFolder Documents -Path "$env:SystemDrive\Документы"
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "%SystemDrive%\Документы" -Force
 Stop-Process -ProcessName explorer
