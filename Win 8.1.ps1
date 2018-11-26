@@ -226,7 +226,7 @@ filter Get-FirstResolvedPath
 }
 $xml | Get-FirstResolvedPath | Get-Item | Get-Content -Raw | Register-ScheduledTask -TaskName "SoftwareDistribution" -Force
 # Включить в Планировщике задач удаление устаревших обновлений Office
-$drives = (Get-Disk | Where-Object BusType -ne USB | Where-Object IsBoot -ne True | Get-Partition).DriveLetter | ForEach-Object {$_ + ':'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue
+$drives = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -ne "True"} | Get-Partition).DriveLetter | ForEach-Object {$_ + ':'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue
 IF ($drives)
 {
 	IF (!(Test-Path D:\Программы\Прочее))
@@ -470,43 +470,52 @@ Remove-Item "Registry::HKEY_CLASSES_ROOT\.rtf\ShellNew" -Recurse -Force -ErrorAc
 # Удалить пункт "Создать Точечный рисунок" из контекстного меню
 Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.bmp\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
 # Переопределить расположение папок "Загрузки" и "Документы"
-IF (!(Test-Path D:\Загрузки))
+$drive = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -ne "True"} | Get-Partition).DriveLetter
+IF ($drive)
 {
-	New-Item -Path D:\Загрузки -Type Directory -Force
-}
-IF (!(Test-Path D:\Документы))
-{
-	New-Item -Path D:\Документы -Type Directory -Force
-}
-function KnownFolderPath
-{
-	Param (
-		[Parameter(Mandatory = $true)]
-		[ValidateSet('Documents', 'Downloads')]
-		[string]$KnownFolder,
+	$drive = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -ne "True"} | Get-Partition).DriveLetter | ForEach-Object {$_ + ':'}
+    $value = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}"
+    IF ($value -ne "D:\Документы")
+    {
+        function KnownFolderPath
+        {
+	        Param (
+		    [Parameter(Mandatory = $true)]
+		    [ValidateSet('Documents', 'Downloads')]
+		    [string]$KnownFolder,
 
-		[Parameter(Mandatory = $true)]
-		[string]$Path
-    )
-	$KnownFolders = @{
-		'Documents' = @('FDD39AD0-238F-46AF-ADB4-6C85480369C7','f42ee2d3-909f-4907-8871-4c22fc0bf756');
-		'Downloads' = @('374DE290-123F-4565-9164-39C4925E467B','7d83ee9b-2244-4e70-b1f5-5393042af1e4');
-	}
-	$Type = ([System.Management.Automation.PSTypeName]'KnownFolders').Type
-	$Signature = @'
-	[DllImport("shell32.dll")]
-	public extern static int SHSetKnownFolderPath(ref Guid folderId, uint flags, IntPtr token, [MarshalAs(UnmanagedType.LPWStr)] string path);
+		    [Parameter(Mandatory = $true)]
+		    [string]$Path
+             )
+	        $KnownFolders = @{
+				'Documents' = @('FDD39AD0-238F-46AF-ADB4-6C85480369C7','f42ee2d3-909f-4907-8871-4c22fc0bf756');
+				'Downloads' = @('374DE290-123F-4565-9164-39C4925E467B','7d83ee9b-2244-4e70-b1f5-5393042af1e4');
+			}
+			$Type = ([System.Management.Automation.PSTypeName]'KnownFolders').Type
+			$Signature = @'
+			[DllImport("shell32.dll")]
+			public extern static int SHSetKnownFolderPath(ref Guid folderId, uint flags, IntPtr token, [MarshalAs(UnmanagedType.LPWStr)] string path);
 '@
-	$Type = Add-Type -MemberDefinition $Signature -Name 'KnownFolders' -Namespace 'SHSetKnownFolderPath' -PassThru
-	#  return $Type::SHSetKnownFolderPath([ref]$KnownFolders[$KnownFolder], 0, 0, $Path)
-	ForEach ($guid in $KnownFolders[$KnownFolder])
-	{
-		$Type::SHSetKnownFolderPath([ref]$guid, 0, 0, $Path)
+			$Type = Add-Type -MemberDefinition $Signature -Name 'KnownFolders' -Namespace 'SHSetKnownFolderPath' -PassThru
+			#  return $Type::SHSetKnownFolderPath([ref]$KnownFolders[$KnownFolder], 0, 0, $Path)
+			ForEach ($guid in $KnownFolders[$KnownFolder])
+			{
+				$Type::SHSetKnownFolderPath([ref]$guid, 0, 0, $Path)
+			}
+			Attrib +r $Path
+		}
+        IF (!(Test-Path $drive\Документы))
+	    {
+		    New-Item -Path $drive\Документы -Type Directory -Force
+	    }
+        IF (!(Test-Path $drive\Загрузки))
+	    {
+		    New-Item -Path $drive\Загрузки -Type Directory -Force
+	    }
+        KnownFolderPath -KnownFolder Downloads -Path "$drive\Загрузки"
+        New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "$drive\Загрузки" -Force
+        KnownFolderPath -KnownFolder Documents -Path "$drive\Документы"
+        New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "$drive\Документы" -Force
 	}
-	Attrib +r $Path
 }
-KnownFolderPath -KnownFolder Downloads -Path "$env:SystemDrive\Загрузки"
-New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "%SystemDrive%\Загрузки" -Force
-KnownFolderPath -KnownFolder Documents -Path "$env:SystemDrive\Документы"
-New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "%SystemDrive%\Документы" -Force
 Stop-Process -ProcessName explorer
