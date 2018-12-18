@@ -1,4 +1,4 @@
-﻿# Службы диагностического отслеживания
+# Службы диагностического отслеживания
 Get-Service DiagTrack | Stop-Service
 Get-Service DiagTrack | Set-Service -StartupType Disabled
 # Отключить отчеты об ошибках Windows
@@ -222,26 +222,9 @@ Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 $xml = 'Программы\Прочее\xml\SoftwareDistribution.xml'
 filter Get-FirstResolvedPath
 {
-	(Get-Disk | Where-Object BusType -eq USB | Get-Partition).DriveLetter | ForEach-Object {$_ + ':\'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue | Select-Object -First 1
+	(Get-Disk | Where-Object {$_.BusType -eq "USB"} | Get-Partition | Get-Volume).DriveLetter | ForEach-Object {$_ + ':\'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue | Select-Object -First 1
 }
 $xml | Get-FirstResolvedPath | Get-Item | Get-Content -Raw | Register-ScheduledTask -TaskName "SoftwareDistribution" -Force
-# Включить в Планировщике задач удаление устаревших обновлений Office
-$drives = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -ne "True"} | Get-Partition).DriveLetter | ForEach-Object {$_ + ':'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue
-IF ($drives)
-{
-	IF (!(Test-Path D:\Программы\Прочее))
-	{
-		New-Item -ItemType Directory D:\Программы\Прочее -Force
-	}
-	$bat = 'Программы\Прочее\Office_task.bat'
-	$xml = 'Программы\Прочее\xml\Office.xml'
-	filter Get-FirstResolvedPath
-	{
-		(Get-Disk | Where-Object BusType -eq USB | Get-Partition).DriveLetter | ForEach-Object {$_ + ':\'} | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue | Select-Object -First 1
-	}
-	$bat | Get-FirstResolvedPath | Copy-Item -Destination D:\Программы\Прочее -Force
-	$xml | Get-FirstResolvedPath | Get-Item | Get-Content -Raw | Register-ScheduledTask -TaskName "Office" -Force
-}
 # Включить в Планировщике задач очистки папки %SYSTEMROOT%\LiveKernelReports
 $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
 `$dir = '$env:SystemRoot\LiveKernelReports'
@@ -262,7 +245,7 @@ $params = @{
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 # Включить в Планировщике задач очистки папки %SYSTEMROOT%\Logs\CBS
 $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
-`$dir = '$env:SystemRoot\Logs\CBS'
+`$dir = "$env:SystemRoot\Logs\CBS"
 `$foldersize = (Get-ChildItem -Path `$dir -Recurse | Measure-Object -Property Length -Sum).Sum/1MB
 IF (`$foldersize -GT 10)
 {
@@ -273,17 +256,6 @@ $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 62 -At 9am
 $settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
 $params = @{
 "TaskName"	= "CBS"
-"Action"	= $action
-"Trigger"	= $trigger
-"Settings"	= $settings
-}
-Register-ScheduledTask @Params -User System -RunLevel Highest -Force
-# Включить в Планировщике задач очистки папки %SYSTEMROOT%\Installer\$PatchCache$\Managed
-$action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument 'Get-ChildItem -Path "$env:SystemRoot\Installer\`$PatchCache$\Managed" -Recurse -Force | Remove-Item -Recurse -Force'
-$trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 120 -At 9am
-$settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
-$params = @{
-"TaskName"	= "PatchCache"
 "Action"	= $action
 "Trigger"	= $trigger
 "Settings"	= $settings
@@ -331,9 +303,10 @@ cmd.exe /c "icacls %WINDIR%\system32\WindowsPowerShell\v1.0\Modules\Defender\Def
     replace("'Remove-MpThreat',", "'Remove-MpThreat')").
     replace("'Start-MpWDOScan')", "")
 } | Out-File $file
-$drives = (Get-Disk | Where-Object IsBoot -ne True | Get-Partition).DriveLetter | ForEach-Object {$_ + ':'}
+$drives = Get-Disk | Where-Object {$_.IsBoot -eq $false}
 IF ($drives)
 {
+    $drives = ($drives | Get-Partition | Get-Volume).DriveLetter | ForEach-Object {$_ + ':'}
 	Foreach ($drive In $drives)
 	{
 		Add-MpPreference -ExclusionPath $drive\Программы\Прочее -Force
@@ -362,9 +335,12 @@ Stop-Process $taskmgr
 $preferences.Preferences[28] = 0
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager -Name Preferences -Type Binary -Value $preferences.Preferences -Force
 # Запретить отключение Ethernet-адаптера для экономии энергии
-$adapter = Get-NetAdapter -Physical | Get-NetAdapterPowerManagement
-$adapter.AllowComputerToTurnOffDevice = "Disabled"
-$adapter | Set-NetAdapterPowerManagement
+IF ((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType -eq 1)
+{
+	$adapter = Get-NetAdapter -Physical | Get-NetAdapterPowerManagement
+	$adapter.AllowComputerToTurnOffDevice = "Disabled"
+	$adapter | Set-NetAdapterPowerManagement
+}
 # Установка крупных значков в панели управления
 IF (!(Test-Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel))
 {
@@ -451,9 +427,9 @@ New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name
 Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name Extended -Force
 New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name SuppressionPolicyEx -Type String -Value "{F211AA05-D4DF-4370-A2A0-9F19C09756A7}" -Force
 New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser\command -Name DelegateExecute -Type String -Value "{ea72d00e-4960-42fa-ba92-7792a7944c1d}" -Force
-# Включить доступа к сетевым дискам при включенном режиме одобрения администратором при доступе из программ, запущенных с повышенными правами
+# Включить доступ к сетевым дискам при включенном режиме одобрения администратором при доступе из программ, запущенных с повышенными правами
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name EnableLinkedConnections -Value 1 -Force
-# Включить длинных путей Win32
+# Включить длинные пути Win32
 New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name LongPathsEnabled -Value 1 -Force
 # Отключить удаление кэша миниатюр
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache" -Name Autorun -Value 0 -Force
@@ -470,52 +446,63 @@ Remove-Item "Registry::HKEY_CLASSES_ROOT\.rtf\ShellNew" -Recurse -Force -ErrorAc
 # Удалить пункт "Создать Точечный рисунок" из контекстного меню
 Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\.bmp\ShellNew" -Recurse -Force -ErrorAction SilentlyContinue
 # Переопределить расположение папок "Загрузки" и "Документы"
-$drive = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -ne "True"} | Get-Partition).DriveLetter
-IF ($drive)
+$DiskCount = (Get-Disk | Where-Object {$_.BusType -ne "USB"}).Number.Count
+IF ($DiskCount -eq 1)
 {
-	$drive = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -ne "True"} | Get-Partition).DriveLetter | ForEach-Object {$_ + ':'}
-    $value = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}"
-    IF ($value -ne "D:\Документы")
-    {
-        function KnownFolderPath
-        {
-	        Param (
-		    [Parameter(Mandatory = $true)]
-		    [ValidateSet('Documents', 'Downloads')]
-		    [string]$KnownFolder,
+	# Один физический диск
+	$drive = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -eq $true} | Get-Partition | Get-Volume).DriveLetter
+}
+Else
+{
+	# Больше одного физического диска
+	$drive = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -eq $false} | Get-Partition | Get-Volume).DriveLetter
+}
+$drive = $drive | ForEach-Object {$_ + ':'}
+function KnownFolderPath
+{
+    Param (
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Documents', 'Downloads')]
+		[string]$KnownFolder,
 
-		    [Parameter(Mandatory = $true)]
-		    [string]$Path
-             )
-	        $KnownFolders = @{
-				'Documents' = @('FDD39AD0-238F-46AF-ADB4-6C85480369C7','f42ee2d3-909f-4907-8871-4c22fc0bf756');
-				'Downloads' = @('374DE290-123F-4565-9164-39C4925E467B','7d83ee9b-2244-4e70-b1f5-5393042af1e4');
-			}
-			$Type = ([System.Management.Automation.PSTypeName]'KnownFolders').Type
-			$Signature = @'
-			[DllImport("shell32.dll")]
-			public extern static int SHSetKnownFolderPath(ref Guid folderId, uint flags, IntPtr token, [MarshalAs(UnmanagedType.LPWStr)] string path);
-'@
-			$Type = Add-Type -MemberDefinition $Signature -Name 'KnownFolders' -Namespace 'SHSetKnownFolderPath' -PassThru
-			#  return $Type::SHSetKnownFolderPath([ref]$KnownFolders[$KnownFolder], 0, 0, $Path)
-			ForEach ($guid in $KnownFolders[$KnownFolder])
-			{
-				$Type::SHSetKnownFolderPath([ref]$guid, 0, 0, $Path)
-			}
-			Attrib +r $Path
-		}
-        IF (!(Test-Path $drive\Документы))
-	    {
-		    New-Item -Path $drive\Документы -Type Directory -Force
-	    }
-        IF (!(Test-Path $drive\Загрузки))
-	    {
-		    New-Item -Path $drive\Загрузки -Type Directory -Force
-	    }
-        KnownFolderPath -KnownFolder Downloads -Path "$drive\Загрузки"
-        New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "$drive\Загрузки" -Force
-        KnownFolderPath -KnownFolder Documents -Path "$drive\Документы"
-        New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "$drive\Документы" -Force
+		[Parameter(Mandatory = $true)]
+		[string]$Path
+	)
+	$KnownFolders = @{
+		'Documents' = @('FDD39AD0-238F-46AF-ADB4-6C85480369C7','F42EE2D3-909F-4907-8871-4C22FC0BF756');
+		'Downloads' = @('374DE290-123F-4565-9164-39C4925E467B','7D83EE9B-2244-4E70-B1F5-5393042AF1E4');
 	}
+	$Type = ([System.Management.Automation.PSTypeName]'KnownFolders').Type
+	$Signature = @'
+	[DllImport("shell32.dll")]
+	public extern static int SHSetKnownFolderPath(ref Guid folderId, uint flags, IntPtr token, [MarshalAs(UnmanagedType.LPWStr)] string path);
+'@
+	$Type = Add-Type -MemberDefinition $Signature -Name 'KnownFolders' -Namespace 'SHSetKnownFolderPath' -PassThru
+	#  return $Type::SHSetKnownFolderPath([ref]$KnownFolders[$KnownFolder], 0, 0, $Path)
+	ForEach ($guid in $KnownFolders[$KnownFolder])
+	{
+		$Type::SHSetKnownFolderPath([ref]$guid, 0, 0, $Path)
+	}
+	Attrib +r $Path
+}
+$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{374DE290-123F-4565-9164-39C4925E467B}"
+IF ($Downloads -ne "D:\Загрузки")
+{
+    IF (!(Test-Path $drive\Загрузки))
+    {
+        New-Item -Path $drive\Загрузки -Type Directory -Force
+    }
+    KnownFolderPath -KnownFolder Downloads -Path "$drive\Загрузки"
+    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "$drive\Загрузки" -Force
+}
+$Documents = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Personal
+IF ($Documents -ne "D:\Документы")
+{
+	IF (!(Test-Path $drive\Документы))
+	{
+		New-Item -Path $drive\Документы -Type Directory -Force
+	}
+	KnownFolderPath -KnownFolder Documents -Path "$drive\Документы"
+	New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "$drive\Документы" -Force
 }
 Stop-Process -ProcessName explorer
