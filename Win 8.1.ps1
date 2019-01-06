@@ -298,15 +298,15 @@ $file = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\Modules\Defender\Defend
 cmd.exe /c "takeown /F %WINDIR%\system32\WindowsPowerShell\v1.0\Modules\Defender\Defender.psd1"
 cmd.exe /c "icacls %WINDIR%\system32\WindowsPowerShell\v1.0\Modules\Defender\Defender.psd1 /grant:r Администраторы:F"
 (Get-Content $file) | ForEach-Object {
-    $_.replace("'MSFT_MpSignature.cdxml',", "'MSFT_MpSignature.cdxml')").
-    replace("'MSFT_MpWDOScan.cdxml')", "").
-    replace("'Remove-MpThreat',", "'Remove-MpThreat')").
-    replace("'Start-MpWDOScan')", "")
+	$_.replace("'MSFT_MpSignature.cdxml',", "'MSFT_MpSignature.cdxml')").
+	replace("'MSFT_MpWDOScan.cdxml')", "").
+	replace("'Remove-MpThreat',", "'Remove-MpThreat')").
+	replace("'Start-MpWDOScan')", "")
 } | Out-File $file
 $drives = Get-Disk | Where-Object {$_.IsBoot -eq $false}
 IF ($drives)
 {
-    $drives = ($drives | Get-Partition | Get-Volume).DriveLetter | ForEach-Object {$_ + ':'}
+	$drives = ($drives | Get-Partition | Get-Volume).DriveLetter | ForEach-Object {$_ + ':'}
 	Foreach ($drive In $drives)
 	{
 		Add-MpPreference -ExclusionPath $drive\Программы\Прочее -Force
@@ -459,9 +459,9 @@ Else
 }
 function KnownFolderPath
 {
-    Param (
-        [Parameter(Mandatory = $true)]
-        [ValidateSet('Documents', 'Downloads')]
+	Param (
+		[Parameter(Mandatory = $true)]
+		[ValidateSet('Documents', 'Downloads')]
 		[string]$KnownFolder,
 
 		[Parameter(Mandatory = $true)]
@@ -477,7 +477,7 @@ function KnownFolderPath
 	public extern static int SHSetKnownFolderPath(ref Guid folderId, uint flags, IntPtr token, [MarshalAs(UnmanagedType.LPWStr)] string path);
 '@
 	$Type = Add-Type -MemberDefinition $Signature -Name 'KnownFolders' -Namespace 'SHSetKnownFolderPath' -PassThru
-	#  return $Type::SHSetKnownFolderPath([ref]$KnownFolders[$KnownFolder], 0, 0, $Path)
+	# return $Type::SHSetKnownFolderPath([ref]$KnownFolders[$KnownFolder], 0, 0, $Path)
 	ForEach ($guid in $KnownFolders[$KnownFolder])
 	{
 		$Type::SHSetKnownFolderPath([ref]$guid, 0, 0, $Path)
@@ -487,12 +487,12 @@ function KnownFolderPath
 $Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{374DE290-123F-4565-9164-39C4925E467B}"
 IF ($Downloads -ne "$drive\Загрузки")
 {
-    IF (!(Test-Path $drive\Загрузки))
-    {
-        New-Item -Path $drive\Загрузки -Type Directory -Force
-    }
-    KnownFolderPath -KnownFolder Downloads -Path "$drive\Загрузки"
-    New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "$drive\Загрузки" -Force
+	IF (!(Test-Path $drive\Загрузки))
+	{
+		New-Item -Path $drive\Загрузки -Type Directory -Force
+	}
+	KnownFolderPath -KnownFolder Downloads -Path "$drive\Загрузки"
+	New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "$drive\Загрузки" -Force
 }
 $Documents = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Personal
 IF ($Documents -ne "$drive\Документы")
