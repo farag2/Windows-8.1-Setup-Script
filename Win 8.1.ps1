@@ -125,9 +125,15 @@ IF (!(Test-Path -Path $env:SystemDrive\Temp))
 	New-Item -Path $env:SystemDrive\Temp -Type Directory -Force
 }
 [Environment]::SetEnvironmentVariable("TMP","$env:SystemDrive\Temp","User")
+New-ItemProperty -Path HKCU:\Environment -Name TMP -Type ExpandString -Value %SystemDrive%\Temp -Force
 [Environment]::SetEnvironmentVariable("TEMP","$env:SystemDrive\Temp","User")
+New-ItemProperty -Path HKCU:\Environment -Name TEMP -Type ExpandString -Value %SystemDrive%\Temp -Force
 [Environment]::SetEnvironmentVariable("TMP","$env:SystemDrive\Temp","Machine")
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TMP -Type ExpandString -Value %SystemDrive%\Temp -Force
 [Environment]::SetEnvironmentVariable("TEMP","$env:SystemDrive\Temp","Machine")
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TEMP -Type ExpandString -Value %SystemDrive%\Temp -Force
+[Environment]::SetEnvironmentVariable("TMP","$env:SystemDrive\Temp",'Process')
+[Environment]::SetEnvironmentVariable("TEMP","$env:SystemDrive\Temp",'Process')
 # Удалить UWP-приложения
 Get-AppxPackage -AllUsers | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxProvisionedPackage -Online | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
@@ -186,7 +192,7 @@ Disable-ComputerRestore -Drive $env:SystemDrive
 Get-ScheduledTask -TaskName SR | Disable-ScheduledTask
 Get-Service -ServiceName swprv,vss | Set-Service -StartupType Manual
 Get-Service -ServiceName swprv,vss | Start-Service -ErrorAction SilentlyContinue
-Get-CimInstance -ClassName Win32_shadowcopy | Remove-CimInstance
+Get-CimInstance -ClassName Win32_ShadowCopy | Remove-CimInstance
 Get-Service -ServiceName swprv,vss | Stop-Service -ErrorAction SilentlyContinue
 Get-Service -ServiceName swprv,vss | Set-Service -StartupType Disabled
 # Отключить Windows Script Host
@@ -222,7 +228,7 @@ Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 $xml = 'Программы\Прочее\xml\SoftwareDistribution.xml'
 filter Get-FirstResolvedPath
 {
-	(Get-Disk | Where-Object {$_.BusType -eq "USB"} | Get-Partition | Get-Volume | Where-Object {$_.DriveLetter -ne $null}).DriveLetter + ':\' | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue
+	(Get-Disk | Where-Object {$_.BusType -eq "USB"} | Get-Partition | Get-Volume | Where-Object {$null -ne $_.DriveLetter}).DriveLetter + ':\' | Join-Path -ChildPath $_ -Resolve -ErrorAction SilentlyContinue
 }
 $xml | Get-FirstResolvedPath | Get-Item | Get-Content -Raw | Register-ScheduledTask -TaskName "SoftwareDistribution" -Force
 # Включить в Планировщике задач очистки папки %SYSTEMROOT%\LiveKernelReports
@@ -288,7 +294,7 @@ cmd.exe /c "icacls %WINDIR%\system32\WindowsPowerShell\v1.0\Modules\Defender\Def
 $drives = Get-Disk | Where-Object {$_.IsBoot -eq $false}
 IF ($drives)
 {
-	$drives = ($drives | Get-Partition | Get-Volume | Where-Object {$_.DriveLetter -ne $null}).DriveLetter | ForEach-Object {$_ + ':'}
+	$drives = ($drives | Get-Partition | Get-Volume | Where-Object {$null -ne $_.DriveLetter}).DriveLetter | ForEach-Object {$_ + ':'}
 	Foreach ($drive In $drives)
 	{
 		Add-MpPreference -ExclusionPath $drive\Программы\Прочее -Force
@@ -364,16 +370,19 @@ New-ItemProperty -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer -Name 
 Remove-Item -Path "Registry::HKEY_CLASSES_ROOT\Folder\ShellEx\ContextMenuHandlers\Library Location" -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -Path "HKLM:\SOFTWARE\Classes\Folder\ShellEx\ContextMenuHandlers\Library Location" -Recurse -Force -ErrorAction SilentlyContinue
 # Удалить пункт "Включить Bitlocker" из контекстного меню
-$keys = @(
-"encrypt-bde",
-"encrypt-bde-elev",
-"manage-bde",
-"resume-bde",
-"resume-bde-elev",
-"unlock-bde")
-Foreach ($key in $keys)
+IF (Get-WindowsEdition -Online | Where-Object {$_.Edition -eq "Professional" -or $_.Edition -eq "Enterprise"})
 {
-	New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Drive\shell\$key -Name ProgrammaticAccessOnly -Type String -Value "" -Force
+	$keys = @(
+	"encrypt-bde",
+	"encrypt-bde-elev",
+	"manage-bde",
+	"resume-bde",
+	"resume-bde-elev",
+	"unlock-bde")
+	Foreach ($key in $keys)
+	{
+		New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Drive\shell\$key -Name ProgrammaticAccessOnly -Type String -Value "" -Force
+	}
 }
 # Открепить от панели задач Microsoft Store
 $getstring = @'
@@ -433,18 +442,9 @@ Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\.rtf\ShellNew -Name ItemNa
 Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\.bmp\ShellNew -Name ItemName -Force -ErrorAction SilentlyContinue
 Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\.bmp\ShellNew -Name NullFile -Force -ErrorAction SilentlyContinue
 # Переопределить расположение папок "Загрузки" и "Документы"
-$DiskCount = (Get-Disk | Where-Object {$_.BusType -ne "USB"}).Number.Count
-IF ($DiskCount -eq 1)
-{
-	# Один физический диск
-	$drive = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -eq $true} | Get-Partition | Get-Volume | Where-Object {$_.DriveLetter -ne $null}).DriveLetter + ':'
-}
-Else
-{
-	# Два физических диска
-	$drive = (Get-Disk | Where-Object {$_.BusType -ne "USB" -and $_.IsBoot -eq $false} | Get-Partition | Get-Volume | Where-Object {$_.DriveLetter -ne $null}).DriveLetter + ':'
-}
-function KnownFolderPath
+$drive = Read-Host -Prompt "Type disk letter for Documents and Downloads folders"
+$drive = $(${drive}.ToUpper())
+Function KnownFolderPath
 {
 	Param (
 		[Parameter(Mandatory = $true)]
@@ -472,23 +472,23 @@ function KnownFolderPath
 	Attrib +r $Path
 }
 $Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{374DE290-123F-4565-9164-39C4925E467B}"
-IF ($Downloads -ne "$drive\Загрузки")
+IF ($Downloads -ne "${drive}:\Загрузки")
 {
-	IF (!(Test-Path -Path $drive\Загрузки))
+	IF (!(Test-Path -Path "${drive}:\Загрузки"))
 	{
-		New-Item -Path $drive\Загрузки -Type Directory -Force
+		New-Item -Path "${drive}:\Загрузки" -Type Directory -Force
 	}
-	KnownFolderPath -KnownFolder Downloads -Path "$drive\Загрузки"
-	New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "$drive\Загрузки" -Force
+	KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Загрузки"
+	New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "${drive}:\Загрузки" -Force
 }
 $Documents = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Personal
-IF ($Documents -ne "$drive\Документы")
+IF ($Documents -ne "${drive}:\Документы")
 {
-	IF (!(Test-Path -Path $drive\Документы))
+	IF (!(Test-Path -Path "${drive}:\Документы"))
 	{
-		New-Item -Path $drive\Документы -Type Directory -Force
+		New-Item -Path "${drive}:\Документы" -Type Directory -Force
 	}
-	KnownFolderPath -KnownFolder Documents -Path "$drive\Документы"
-	New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "$drive\Документы" -Force
+	KnownFolderPath -KnownFolder Documents -Path "${drive}:\Документы"
+	New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "${drive}:\Документы" -Force
 }
 Stop-Process -ProcessName explorer
