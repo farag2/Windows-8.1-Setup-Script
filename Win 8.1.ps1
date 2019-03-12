@@ -91,12 +91,8 @@ IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization)
 	New-Item -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization -Force
 }
 New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization -Name NoLockScreen -Value 1 -Force
-# Запускать проводник с развернутой лентой
-IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer))
-{
-	New-Item -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Force
-}
-New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name ExplorerRibbonStartsMinimized -Value 2 -Force
+# Включить отображение ленты проводника в развернутом виде
+New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Ribbon -Name MinimizedStateTabletModeOff -Value 0 -Force
 # Отключить поиск программ в Microsoft Store
 IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer))
 {
@@ -104,10 +100,6 @@ IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer))
 }
 New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name NoUseStoreOpenWith -Value 1 -Force
 # Не показывать уведомление "Установлено новое приложение"
-IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer))
-{
-	New-Item -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Force
-}
 New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name NoNewAppAlert -Value 1 -Force
 # Отключить OneDrive
 IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive))
@@ -294,10 +286,12 @@ Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 # Установить схему управления питания для стационарного ПК и ноутбука
 IF ((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType -eq 1)
 {
+	# Cтационарный ПК
 	powercfg /s 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
 }
 Else
 {
+	# Ноутбук
 	powercfg /s 381b4222-f694-41f0-9685-ff5bb260df2e
 }
 # Использовать последнюю установленную версию .NET Framework для всех приложений
@@ -442,22 +436,24 @@ Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\.rtf\ShellNew -Name ItemNa
 # Удалить пункт "Создать Точечный рисунок" из контекстного меню
 Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\.bmp\ShellNew -Name ItemName -Force -ErrorAction SilentlyContinue
 Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\.bmp\ShellNew -Name NullFile -Force -ErrorAction SilentlyContinue
-# Переопределить расположение папок "Загрузки" и "Документы"
-$drive = Read-Host -Prompt "Type disk letter for Documents and Downloads folders"
-$drive = $(${drive}.ToUpper())
+# Переопределить расположение папок "Рабочий стол", "Документы", "Загрузки", "Музыка", "Изображения", "Видео"
 Function KnownFolderPath
 {
 	Param (
 		[Parameter(Mandatory = $true)]
-		[ValidateSet('Documents', 'Downloads')]
+		[ValidateSet('Desktop', 'Documents', 'Downloads', 'Music', 'Pictures', 'Videos')]
 		[string]$KnownFolder,
 
 		[Parameter(Mandatory = $true)]
 		[string]$Path
 	)
 	$KnownFolders = @{
-		'Documents' = @('FDD39AD0-238F-46AF-ADB4-6C85480369C7','F42EE2D3-909F-4907-8871-4C22FC0BF756');
-		'Downloads' = @('374DE290-123F-4565-9164-39C4925E467B','7D83EE9B-2244-4E70-B1F5-5393042AF1E4');
+		'Desktop' = @('B4BFCC3A-DB2C-424C-B029-7FE99A87C641');
+		'Documents' = @('FDD39AD0-238F-46AF-ADB4-6C85480369C7','f42ee2d3-909f-4907-8871-4c22fc0bf756');
+		'Downloads' = @('374DE290-123F-4565-9164-39C4925E467B','7d83ee9b-2244-4e70-b1f5-5393042af1e4');
+		'Music' = @('4BD8D571-6D19-48D3-BE97-422220080E43','a0c69a99-21c8-4671-8703-7934162fcf1d');
+		'Pictures' = @('33E28130-4E1E-4676-835A-98395C3BC3BB','0ddd015d-b06c-45d5-8c4c-f59713854639');
+		'Videos' = @('18989B1D-99B5-455B-841C-AB7C74E4DDFC','35286a68-3c57-41a1-bbb1-0eae73d76c95');
 	}
 	$Type = ([System.Management.Automation.PSTypeName]'KnownFolders').Type
 	$Signature = @'
@@ -472,24 +468,117 @@ Function KnownFolderPath
 	}
 	Attrib +r $Path
 }
-$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{374DE290-123F-4565-9164-39C4925E467B}"
-IF ($Downloads -ne "${drive}:\Загрузки")
+$getdisk = (Get-Disk | Where-Object {$_.BusType -ne "USB"} | Get-Partition | Get-Volume).DriveLetter
+# Рабочий стол
+$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Рабочий стол`". `nЧтобы пропустить, нажмите Enter"
+IF ($getdisk -eq $drive)
 {
-	IF (!(Test-Path -Path "${drive}:\Загрузки"))
+	$drive = $(${drive}.ToUpper())
+	$Desktop = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Desktop
+	IF ($Desktop -ne "${drive}:\Рабочий стол")
 	{
-		New-Item -Path "${drive}:\Загрузки" -Type Directory -Force
+		IF (!(Test-Path -Path "${drive}:\Рабочий стол"))
+		{
+			New-Item -Path "${drive}:\Рабочий стол" -Type Directory -Force
+		}
+		KnownFolderPath -KnownFolder Desktop -Path "${drive}:\Рабочий стол"
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{754AC886-DF64-4CBA-86B5-F7FBF4FBCEF5}" -Type ExpandString -Value "${drive}:\Рабочий стол" -Force
 	}
-	KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Загрузки"
-	New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "${drive}:\Загрузки" -Force
 }
-$Documents = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Personal
-IF ($Documents -ne "${drive}:\Документы")
+# Документы
+$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Документы`". `nЧтобы пропустить, нажмите Enter"
+IF ($getdisk -eq $drive)
 {
-	IF (!(Test-Path -Path "${drive}:\Документы"))
+	$drive = $(${drive}.ToUpper())
+	$Documents = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Personal
+	IF ($Documents -ne "${drive}:\Документы")
 	{
-		New-Item -Path "${drive}:\Документы" -Type Directory -Force
+		IF (!(Test-Path -Path "${drive}:\Документы"))
+		{
+			New-Item -Path "${drive}:\Документы" -Type Directory -Force
+		}
+		KnownFolderPath -KnownFolder Documents -Path "${drive}:\Документы"
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "${drive}:\Документы" -Force
 	}
-	KnownFolderPath -KnownFolder Documents -Path "${drive}:\Документы"
-	New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "${drive}:\Документы" -Force
+}
+# Загрузки
+$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Загрузки`". `nЧтобы пропустить, нажмите Enter"
+IF ($getdisk -eq $drive)
+{
+	$drive = $(${drive}.ToUpper())
+	$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{374DE290-123F-4565-9164-39C4925E467B}"
+	IF ($Downloads -ne "${drive}:\Загрузки")
+	{
+		IF (!(Test-Path -Path "${drive}:\Загрузки"))
+		{
+			New-Item -Path "${drive}:\Загрузки" -Type Directory -Force
+		}
+		KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Загрузки"
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "${drive}:\Загрузки" -Force
+	}
+}
+# Музыка
+$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Музыка`". `nЧтобы пропустить, нажмите Enter"
+IF ($getdisk -eq $drive)
+{
+	$drive = $(${drive}.ToUpper())
+	$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Music"
+	IF ($Downloads -ne "${drive}:\Музыка")
+	{
+		IF (!(Test-Path -Path "${drive}:\Музыка"))
+		{
+			New-Item -Path "${drive}:\Музыка" -Type Directory -Force
+		}
+		KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Музыка"
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{A0C69A99-21C8-4671-8703-7934162FCF1D}" -Type ExpandString -Value "${drive}:\Музыка" -Force
+	}
+}
+# Изображения
+$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Изображения`". `nЧтобы пропустить, нажмите Enter"
+IF ($getdisk -eq $drive)
+{
+	$drive = $(${drive}.ToUpper())
+	$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Pictures"
+	IF ($Downloads -ne "${drive}:\Изображения")
+	{
+		IF (!(Test-Path -Path "${drive}:\Изображения"))
+		{
+			New-Item -Path "${drive}:\Изображения" -Type Directory -Force
+		}
+		KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Изображения"
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{0DDD015D-B06C-45D5-8C4C-F59713854639}" -Type ExpandString -Value "${drive}:\Изображения" -Force
+	}
+}
+# Видео
+$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Видео`". `nЧтобы пропустить, нажмите Enter"
+IF ($getdisk -eq $drive)
+{
+	$drive = $(${drive}.ToUpper())
+	$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Video"
+	IF ($Downloads -ne "${drive}:\Видео")
+	{
+		IF (!(Test-Path -Path "${drive}:\Видео"))
+		{
+			New-Item -Path "${drive}:\Видео" -Type Directory -Force
+		}
+		KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Видео"
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{35286A68-3C57-41A1-BBB1-0EAE73D76C95}" -Type ExpandString -Value "${drive}:\Видео" -Force
+	}
+}
+# Удалить %SYSTEMDRIVE%\PerfLogs
+IF ((Test-Path -Path $env:SystemDrive\PerfLogs))
+{
+	Remove-Item $env:SystemDrive\PerfLogs -Recurse -Force
+}
+# Удалить %LOCALAPPDATA%\Temp
+IF ((Test-Path -Path $env:LOCALAPPDATA\Temp))
+{
+	Remove-Item $env:LOCALAPPDATA\Temp -Recurse -Force
+}
+# Удалить %SYSTEMROOT%\Temp
+IF ((Test-Path -Path $env:SystemRoot\Temp))
+{
+	Restart-Service -ServiceName Spooler -Force
+	Remove-Item -Path "$env:SystemRoot\Temp" -Recurse -Force
 }
 Stop-Process -ProcessName explorer
