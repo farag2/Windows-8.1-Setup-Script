@@ -104,7 +104,7 @@ New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name 
 # Отключить OneDrive
 IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive))
 {
-	New-Item -Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive -Force
+	New-Item -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive -Force
 }
 New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive -Name DisableFileSyncNGSC -Value 1 -Force
 # Всегда ждать сеть при запуске и входе в систему
@@ -448,12 +448,12 @@ Function KnownFolderPath
 		[string]$Path
 	)
 	$KnownFolders = @{
-		'Desktop' = @('B4BFCC3A-DB2C-424C-B029-7FE99A87C641');
-		'Documents' = @('FDD39AD0-238F-46AF-ADB4-6C85480369C7','f42ee2d3-909f-4907-8871-4c22fc0bf756');
-		'Downloads' = @('374DE290-123F-4565-9164-39C4925E467B','7d83ee9b-2244-4e70-b1f5-5393042af1e4');
-		'Music' = @('4BD8D571-6D19-48D3-BE97-422220080E43','a0c69a99-21c8-4671-8703-7934162fcf1d');
-		'Pictures' = @('33E28130-4E1E-4676-835A-98395C3BC3BB','0ddd015d-b06c-45d5-8c4c-f59713854639');
-		'Videos' = @('18989B1D-99B5-455B-841C-AB7C74E4DDFC','35286a68-3c57-41a1-bbb1-0eae73d76c95');
+		'Desktop'	= @('B4BFCC3A-DB2C-424C-B029-7FE99A87C641');
+		'Documents'	= @('FDD39AD0-238F-46AF-ADB4-6C85480369C7', 'f42ee2d3-909f-4907-8871-4c22fc0bf756');
+		'Downloads'	= @('374DE290-123F-4565-9164-39C4925E467B', '7d83ee9b-2244-4e70-b1f5-5393042af1e4');
+		'Music'		= @('4BD8D571-6D19-48D3-BE97-422220080E43', 'a0c69a99-21c8-4671-8703-7934162fcf1d');
+		'Pictures'	= @('33E28130-4E1E-4676-835A-98395C3BC3BB', '0ddd015d-b06c-45d5-8c4c-f59713854639');
+		'Videos'	= @('18989B1D-99B5-455B-841C-AB7C74E4DDFC', '35286a68-3c57-41a1-bbb1-0eae73d76c95');
 	}
 	$Type = ([System.Management.Automation.PSTypeName]'KnownFolders').Type
 	$Signature = @'
@@ -522,14 +522,14 @@ $drive = Read-Host -Prompt "Введите букву диска, в корне 
 IF ($getdisk -eq $drive)
 {
 	$drive = $(${drive}.ToUpper())
-	$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Music"
-	IF ($Downloads -ne "${drive}:\Музыка")
+	$Music = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Music"
+	IF (Music -ne "${drive}:\Музыка")
 	{
 		IF (!(Test-Path -Path "${drive}:\Музыка"))
 		{
 			New-Item -Path "${drive}:\Музыка" -Type Directory -Force
 		}
-		KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Музыка"
+		KnownFolderPath -KnownFolder Music -Path "${drive}:\Музыка"
 		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{A0C69A99-21C8-4671-8703-7934162FCF1D}" -Type ExpandString -Value "${drive}:\Музыка" -Force
 	}
 }
@@ -538,14 +538,14 @@ $drive = Read-Host -Prompt "Введите букву диска, в корне 
 IF ($getdisk -eq $drive)
 {
 	$drive = $(${drive}.ToUpper())
-	$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Pictures"
-	IF ($Downloads -ne "${drive}:\Изображения")
+	$Pictures = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Pictures"
+	IF ($Pictures -ne "${drive}:\Изображения")
 	{
 		IF (!(Test-Path -Path "${drive}:\Изображения"))
 		{
 			New-Item -Path "${drive}:\Изображения" -Type Directory -Force
 		}
-		KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Изображения"
+		KnownFolderPath -KnownFolder Pictures -Path "${drive}:\Изображения"
 		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{0DDD015D-B06C-45D5-8C4C-F59713854639}" -Type ExpandString -Value "${drive}:\Изображения" -Force
 	}
 }
@@ -554,14 +554,14 @@ $drive = Read-Host -Prompt "Введите букву диска, в корне 
 IF ($getdisk -eq $drive)
 {
 	$drive = $(${drive}.ToUpper())
-	$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Video"
-	IF ($Downloads -ne "${drive}:\Видео")
+	$Videos = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Video"
+	IF ($Videos -ne "${drive}:\Видео")
 	{
 		IF (!(Test-Path -Path "${drive}:\Видео"))
 		{
 			New-Item -Path "${drive}:\Видео" -Type Directory -Force
 		}
-		KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Видео"
+		KnownFolderPath -KnownFolder Videos -Path "${drive}:\Видео"
 		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{35286A68-3C57-41A1-BBB1-0EAE73D76C95}" -Type ExpandString -Value "${drive}:\Видео" -Force
 	}
 }
