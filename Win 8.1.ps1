@@ -216,7 +216,7 @@ Get-Service -ServiceName swprv,vss | Set-Service -StartupType Disabled
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Script Host\Settings" -Name Enabled -Value 0 -Force
 # Включить брандмауэр
 Set-NetFirewallProfile -Enabled True
-# Включить в Планировщике задач запуска очистки обновлений Windows
+# Включить в Планировщике задач запуск очистки диска
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Update Cleanup" -Name StateFlags1337 -Value 2 -Force
 $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\cleanmgr.exe" -Argument "/sagerun:1337"
 $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 90 -At 9am
