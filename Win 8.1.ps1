@@ -204,14 +204,12 @@ cmd.exe /c assoc pngfile\DefaultIcon=%SystemRoot%\System32\imageres.dll,-71
 cmd.exe /c assoc TIFImage.Document\DefaultIcon=%SystemRoot%\System32\imageres.dll,-122
 # Включить автоматическое обновление для других продуктов Microsoft
 (New-Object -ComObject Microsoft.Update.ServiceManager).AddService2("7971f918-a847-4430-9279-4a52d1efe18d",7,"")
-# Отключить восстановление системы
-Disable-ComputerRestore -Drive $env:SystemDrive
-Get-ScheduledTask -TaskName SR | Disable-ScheduledTask
-Get-Service -ServiceName swprv,vss | Set-Service -StartupType Manual
-Get-Service -ServiceName swprv,vss | Start-Service -ErrorAction SilentlyContinue
+# Включить восстановление системы
+Enable-ComputerRestore -Drive $env:SystemDrive
+Get-ScheduledTask -TaskName SR | Enable-ScheduledTask
+Get-Service -ServiceName swprv, vss | Set-Service -StartupType Manual
+Get-Service -ServiceName swprv, vss | Start-Service
 Get-CimInstance -ClassName Win32_ShadowCopy | Remove-CimInstance
-Get-Service -ServiceName swprv,vss | Stop-Service -ErrorAction SilentlyContinue
-Get-Service -ServiceName swprv,vss | Set-Service -StartupType Disabled
 # Отключить Windows Script Host
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows Script Host\Settings" -Name Enabled -Value 0 -Force
 # Включить брандмауэр
