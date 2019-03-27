@@ -71,7 +71,7 @@ New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\
 # Отключить автозапуск с внешних носителей
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers -Name DisableAutoplay -Value 1 -Force
 # He дoбaвлять "- яpлык" для coздaвaeмыx яpлыкoв
-New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name link -Type Binary -Value ([byte[]](00,00,00,00)) -Force
+New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name link -PropertyType Binary -Value ([byte[]](00,00,00,00)) -Force
 # Всегда отображать все значки в области уведомлений
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name EnableAutoTray -Value 0 -Force
 # Установка крупных значков в панели управления
@@ -133,28 +133,28 @@ New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\
 # Не показывать анимацию при первом входе в систему
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System -Name EnableFirstLogonAnimation -Value 0 -Force
 # Отключить SmartScreen для приложений и файлов
-New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name SmartScreenEnabled -Type String -Value Off -Force
+New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name SmartScreenEnabled -PropertyType String -Value Off -Force
 # Сохранять скриншот по Win+PrtScr на Рабочем столе
-New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{b7bede81-df94-4682-a7d8-57a52620b86f}" -Name RelativePath -Type String -Value %USERPROFILE%\Desktop -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{b7bede81-df94-4682-a7d8-57a52620b86f}" -Name RelativePath -PropertyType String -Value %USERPROFILE%\Desktop -Force
 # Установка качества фона рабочего стола на 100 %
 New-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name JPEGImportQuality -Value 100 -Force
 # Отключить залипания клавиши Shift после 5 нажатий
-New-ItemProperty -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name Flags -Type String -Value 506 -Force
+New-ItemProperty -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name Flags -PropertyType String -Value 506 -Force
 # Отключить отображение вкладки "Предыдущие версии" в свойствах файлов
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name NoPreviousVersionsPage -Value 1 -Force
 # Изменить путь переменной среды для временных файлов
 IF (!(Test-Path -Path $env:SystemDrive\Temp))
 {
-	New-Item -Path $env:SystemDrive\Temp -Type Directory -Force
+	New-Item -Path $env:SystemDrive\Temp -ItemType Directory -Force
 }
 [Environment]::SetEnvironmentVariable("TMP","$env:SystemDrive\Temp","User")
-New-ItemProperty -Path HKCU:\Environment -Name TMP -Type ExpandString -Value %SystemDrive%\Temp -Force
+New-ItemProperty -Path HKCU:\Environment -Name TMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
 [Environment]::SetEnvironmentVariable("TEMP","$env:SystemDrive\Temp","User")
-New-ItemProperty -Path HKCU:\Environment -Name TEMP -Type ExpandString -Value %SystemDrive%\Temp -Force
+New-ItemProperty -Path HKCU:\Environment -Name TEMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
 [Environment]::SetEnvironmentVariable("TMP","$env:SystemDrive\Temp","Machine")
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TMP -Type ExpandString -Value %SystemDrive%\Temp -Force
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
 [Environment]::SetEnvironmentVariable("TEMP","$env:SystemDrive\Temp","Machine")
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TEMP -Type ExpandString -Value %SystemDrive%\Temp -Force
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TEMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
 [Environment]::SetEnvironmentVariable("TMP","$env:SystemDrive\Temp",'Process')
 [Environment]::SetEnvironmentVariable("TEMP","$env:SystemDrive\Temp",'Process')
 # Удалить UWP-приложения
@@ -182,11 +182,11 @@ Foreach ($feature in $features)
 	Disable-WindowsOptionalFeature -Online -FeatureName $feature -NoRestart
 }
 # Добавить Средство просмотра фотографий Windows в пункт контекстного меню "Открыть с помощью"
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\open -Name MuiVerb -Type String -Value "@photoviewer.dll,-3043" -Force
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\open\command -Name "(Default)" -Type ExpandString -Value "%SystemRoot%\System32\rundll32.exe `"%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll`", ImageView_Fullscreen %1" -Force
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\open\DropTarget -Name Clsid -Type String -Value "{FFE2A43C-56B9-4bf5-9A79-CC6D4285608A}" -Force
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\print\command -Name "(Default)" -Type ExpandString -Value "%SystemRoot%\System32\rundll32.exe `"%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll`", ImageView_Fullscreen %1" -Force
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\open\DropTarget -Name Clsid -Type String -Value "{60fd46de-f830-4894-a628-6fa81bc0190d}" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\open -Name MuiVerb -PropertyType String -Value "@photoviewer.dll,-3043" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\open\command -Name "(Default)" -PropertyType ExpandString -Value "%SystemRoot%\System32\rundll32.exe `"%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll`", ImageView_Fullscreen %1" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\open\DropTarget -Name Clsid -PropertyType String -Value "{FFE2A43C-56B9-4bf5-9A79-CC6D4285608A}" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\print\command -Name "(Default)" -PropertyType ExpandString -Value "%SystemRoot%\System32\rundll32.exe `"%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll`", ImageView_Fullscreen %1" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Applications\photoviewer.dll\shell\open\DropTarget -Name Clsid -PropertyType String -Value "{60fd46de-f830-4894-a628-6fa81bc0190d}" -Force
 # Ассоциация со Средством просмотра фотографий Windows
 cmd.exe /c --% ftype Paint.Picture=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1
 cmd.exe /c --% ftype jpegfile=%windir%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1
@@ -237,7 +237,7 @@ $params = @{
 "Settings"	= $settings
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
-# Включить в Планировщике задач очистки папки %SYSTEMROOT%\SoftwareDistribution\Download
+# Включить в Планировщике задач очистку папки %SYSTEMROOT%\SoftwareDistribution\Download
 $xml = 'Программы\Прочее\xml\SoftwareDistribution.xml'
 function Get-ResolvedPath
 {
@@ -265,7 +265,7 @@ $params = @{
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 # Включить в Планировщике задач очистки папки %SYSTEMROOT%\Logs\CBS
 $action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
-`$dir = "$env:SystemRoot\Logs\CBS"
+`$dir = '$env:SystemRoot\Logs\CBS'
 `$foldersize = (Get-ChildItem -Path `$dir -Recurse | Measure-Object -Property Length -Sum).Sum/1MB
 IF (`$foldersize -GT 10)
 {
@@ -296,7 +296,7 @@ Else
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\.NETFramework -Name OnlyUseLatestCLR -Value 1 -Force
 New-ItemProperty -Path HKLM:\SOFTWARE\Wow6432Node\Microsoft\.NETFramework -Name OnlyUseLatestCLR -Value 1 -Force
 # Включить Num Lock при загрузке
-New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Control Panel\Keyboard" -Name InitialKeyboardIndicators -Type String -Value 2147483650 -Force
+New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Control Panel\Keyboard" -Name InitialKeyboardIndicators -PropertyType String -Value 2147483650 -Force
 # Добавить в исключение Windows Defender папку
 $file = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\Modules\Defender\Defender.psd1"
 cmd.exe /c "takeown /F %WINDIR%\system32\WindowsPowerShell\v1.0\Modules\Defender\Defender.psd1"
@@ -321,14 +321,14 @@ IF (!(Test-Path "HKCU:\Software\Classes\Typelib\{8cec5860-07a1-11d9-b15e-000d56b
 {
 	New-Item -Path "HKCU:\Software\Classes\Typelib\{8cec5860-07a1-11d9-b15e-000d56bfe6ee}\1.0\0\win64" -Force
 }
-New-ItemProperty -Path "HKCU:\Software\Classes\Typelib\{8cec5860-07a1-11d9-b15e-000d56bfe6ee}\1.0\0\win64" -Name "(Default)" -Type String -Value "" -Force
+New-ItemProperty -Path "HKCU:\Software\Classes\Typelib\{8cec5860-07a1-11d9-b15e-000d56bfe6ee}\1.0\0\win64" -Name "(Default)" -PropertyType String -Value "" -Force
 # Раскрыть окно Диспетчера задач
 $taskmgr = Get-Process -Name Taskmgr -ErrorAction SilentlyContinue
 IF ($taskmgr)
 {
 	$taskmgr.CloseMainWindow()
 }
-$taskmgr = Start-Process -WindowStyle Hidden -FilePath taskmgr.exe -PassThru
+$taskmgr = Start-Process -FilePath taskmgr.exe -WindowStyle Hidden -PassThru
 Do
 {
 	Start-Sleep -Milliseconds 100
@@ -337,7 +337,7 @@ Do
 Until ($preferences)
 Stop-Process $taskmgr
 $preferences.Preferences[28] = 0
-New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager -Name Preferences -Type Binary -Value $preferences.Preferences -Force
+New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager -Name Preferences -PropertyType Binary -Value $preferences.Preferences -Force
 # Запретить отключение Ethernet-адаптера для экономии энергии
 IF ((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType -eq 1)
 {
@@ -351,8 +351,8 @@ IF (!(Test-Path -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\Internati
 	New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International" -Force
 }
 New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International" -Name BlockUserInputMethodsForSignIn -Value 1 -Force
-New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 1 -Type String -Value 00000409 -Force
-New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 2 -Type String -Value 00000419 -Force
+New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 1 -PropertyType String -Value 00000409 -Force
+New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 2 -PropertyType String -Value 00000419 -Force
 # Открепить значок Магазина на панели задач
 IF (!(Test-Path -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer))
 {
@@ -381,21 +381,21 @@ IF (!(Test-Path -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлеч
 {
 	New-Item -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлечь\Command -Force
 }
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлечь\Command -Name "(Default)" -Type String -Value 'msiexec.exe /a "%1" /qb TARGETDIR="%1 extracted"' -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлечь\Command -Name "(Default)" -PropertyType String -Value 'msiexec.exe /a "%1" /qb TARGETDIR="%1 extracted"' -Force
 # Удалить принтеры
 Remove-Printer -Name Fax, "Microsoft XPS Document Writer" -ErrorAction SilentlyContinue
 # Добавить "Запуск от имени друго пользователя" в контекстное меню для exe-файлов
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name "(Default)" -Type String -Value "@shell32.dll,-50944" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name "(Default)" -PropertyType String -Value "@shell32.dll,-50944" -Force
 Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name Extended -Force
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name SuppressionPolicyEx -Type String -Value "{F211AA05-D4DF-4370-A2A0-9F19C09756A7}" -Force
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser\command -Name DelegateExecute -Type String -Value "{ea72d00e-4960-42fa-ba92-7792a7944c1d}" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name SuppressionPolicyEx -PropertyType String -Value "{F211AA05-D4DF-4370-A2A0-9F19C09756A7}" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser\command -Name DelegateExecute -PropertyType String -Value "{ea72d00e-4960-42fa-ba92-7792a7944c1d}" -Force
 # Включить длинные пути Win32
 New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem -Name LongPathsEnabled -Value 1 -Force
 # Отключить удаление кэша миниатюр
 New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache" -Name Autorun -Value 0 -Force
 New-ItemProperty -Path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\Thumbnail Cache" -Name Autorun -Value 0 -Force
 # Удалить пункт "Отправить" из контекстного меню
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\SendTo -Name "(Default)" -Type String -Value "" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\SendTo -Name "(Default)" -PropertyType String -Value "" -Force
 # Удалить пункт "Включить Bitlocker" из контекстного меню
 IF (Get-WindowsEdition -Online | Where-Object {$_.Edition -eq "Professional" -or $_.Edition -eq "Enterprise"})
 {
@@ -408,7 +408,7 @@ IF (Get-WindowsEdition -Online | Where-Object {$_.Edition -eq "Professional" -or
 	"unlock-bde")
 	Foreach ($key in $keys)
 	{
-		New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Drive\shell\$key -Name ProgrammaticAccessOnly -Type String -Value "" -Force
+		New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Drive\shell\$key -Name ProgrammaticAccessOnly -PropertyType String -Value "" -Force
 	}
 }
 # Удалить пункт "Добавить в библиотеку" из контекстного меню
@@ -477,10 +477,10 @@ IF ($getdisk -eq $drive)
 	{
 		IF (!(Test-Path -Path "${drive}:\Рабочий стол"))
 		{
-			New-Item -Path "${drive}:\Рабочий стол" -Type Directory -Force
+			New-Item -Path "${drive}:\Рабочий стол" -ItemType Directory -Force
 		}
 		KnownFolderPath -KnownFolder Desktop -Path "${drive}:\Рабочий стол"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{754AC886-DF64-4CBA-86B5-F7FBF4FBCEF5}" -Type ExpandString -Value "${drive}:\Рабочий стол" -Force
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{754AC886-DF64-4CBA-86B5-F7FBF4FBCEF5}" -PropertyType ExpandString -Value "${drive}:\Рабочий стол" -Force
 	}
 }
 # Документы
@@ -493,10 +493,10 @@ IF ($getdisk -eq $drive)
 	{
 		IF (!(Test-Path -Path "${drive}:\Документы"))
 		{
-			New-Item -Path "${drive}:\Документы" -Type Directory -Force
+			New-Item -Path "${drive}:\Документы" -ItemType Directory -Force
 		}
 		KnownFolderPath -KnownFolder Documents -Path "${drive}:\Документы"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -Type ExpandString -Value "${drive}:\Документы" -Force
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -PropertyType ExpandString -Value "${drive}:\Документы" -Force
 	}
 }
 # Загрузки
@@ -509,10 +509,10 @@ IF ($getdisk -eq $drive)
 	{
 		IF (!(Test-Path -Path "${drive}:\Загрузки"))
 		{
-			New-Item -Path "${drive}:\Загрузки" -Type Directory -Force
+			New-Item -Path "${drive}:\Загрузки" -ItemType Directory -Force
 		}
 		KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Загрузки"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -Type ExpandString -Value "${drive}:\Загрузки" -Force
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -PropertyType ExpandString -Value "${drive}:\Загрузки" -Force
 	}
 }
 # Музыка
@@ -521,14 +521,14 @@ IF ($getdisk -eq $drive)
 {
 	$drive = $(${drive}.ToUpper())
 	$Music = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Music"
-	IF (Music -ne "${drive}:\Музыка")
+	IF ($Music -ne "${drive}:\Музыка")
 	{
 		IF (!(Test-Path -Path "${drive}:\Музыка"))
 		{
-			New-Item -Path "${drive}:\Музыка" -Type Directory -Force
+			New-Item -Path "${drive}:\Музыка" -ItemType Directory -Force
 		}
 		KnownFolderPath -KnownFolder Music -Path "${drive}:\Музыка"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{A0C69A99-21C8-4671-8703-7934162FCF1D}" -Type ExpandString -Value "${drive}:\Музыка" -Force
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{A0C69A99-21C8-4671-8703-7934162FCF1D}" -PropertyType ExpandString -Value "${drive}:\Музыка" -Force
 	}
 }
 # Изображения
@@ -541,10 +541,10 @@ IF ($getdisk -eq $drive)
 	{
 		IF (!(Test-Path -Path "${drive}:\Изображения"))
 		{
-			New-Item -Path "${drive}:\Изображения" -Type Directory -Force
+			New-Item -Path "${drive}:\Изображения" -ItemType Directory -Force
 		}
 		KnownFolderPath -KnownFolder Pictures -Path "${drive}:\Изображения"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{0DDD015D-B06C-45D5-8C4C-F59713854639}" -Type ExpandString -Value "${drive}:\Изображения" -Force
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{0DDD015D-B06C-45D5-8C4C-F59713854639}" -PropertyType ExpandString -Value "${drive}:\Изображения" -Force
 	}
 }
 # Видео
@@ -557,10 +557,10 @@ IF ($getdisk -eq $drive)
 	{
 		IF (!(Test-Path -Path "${drive}:\Видео"))
 		{
-			New-Item -Path "${drive}:\Видео" -Type Directory -Force
+			New-Item -Path "${drive}:\Видео" -ItemType Directory -Force
 		}
 		KnownFolderPath -KnownFolder Videos -Path "${drive}:\Видео"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{35286A68-3C57-41A1-BBB1-0EAE73D76C95}" -Type ExpandString -Value "${drive}:\Видео" -Force
+		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{35286A68-3C57-41A1-BBB1-0EAE73D76C95}" -PropertyType ExpandString -Value "${drive}:\Видео" -Force
 	}
 }
 # Удалить %SYSTEMDRIVE%\PerfLogs
@@ -579,4 +579,4 @@ IF ((Test-Path -Path $env:SystemRoot\Temp))
 	Restart-Service -ServiceName Spooler -Force
 	Remove-Item -Path "$env:SystemRoot\Temp" -Recurse -Force
 }
-Stop-Process -ProcessName explorer
+Stop-Process -Name explorer
