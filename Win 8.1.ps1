@@ -4,7 +4,7 @@ Get-Service -ServiceName DiagTrack | Set-Service -StartupType Disabled
 # Отключить отчеты об ошибках Windows
 New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\Windows Error Reporting" -Name Disabled -Value 1 -Force
 # Изменить частоту формирования отзывов на "Никогда"
-IF (!(Test-Path -Path HKCU:\Software\Microsoft\Siuf\Rules))
+IF (-not (Test-Path -Path HKCU:\Software\Microsoft\Siuf\Rules))
 {
 	New-Item -Path HKCU:\Software\Microsoft\Siuf\Rules -Force
 }
@@ -45,7 +45,7 @@ Foreach ($task in $tasks)
 # Отключить в "Журналах Windows/Безопасность" сообщения "Платформа фильтрации IP-пакетов Windows разрешила подключение"
 auditpol /set /subcategory:"{0CCE9226-69AE-11D9-BED3-505054503030}" /success:disable /failure:disable
 # Отобразить "Этот компьютер" на Рабочем столе
-IF (!(Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel))
+IF (-not (Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel))
 {
 	New-Item -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel -Force
 }
@@ -63,7 +63,7 @@ New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\
 # Не отображать все папки в области навигации
 New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name NavPaneShowAllFolders -Value 0 -Force
 # Развернуть диалог переноса файлов
-IF (!(Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager))
+IF (-not (Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager))
 {
 	New-Item -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\OperationStatusManager -Force
 }
@@ -75,7 +75,7 @@ New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer 
 # Всегда отображать все значки в области уведомлений
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name EnableAutoTray -Value 0 -Force
 # Установка крупных значков в панели управления
-IF (!(Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel))
+IF (-not (Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel))
 {
 	New-Item -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel -Force
 }
@@ -86,7 +86,7 @@ New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer 
 # Отключить гибридный спящий режим
 New-ItemProperty -Path HKLM:\SYSTEM\ControlSet001\Control\Power -Name HibernateEnabled -Value 0 -Force
 # Не отображать экран блокировки
-IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization))
+IF (-not (Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization))
 {
 	New-Item -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization -Force
 }
@@ -94,7 +94,7 @@ New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization
 # Включить отображение ленты проводника в развернутом виде
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Ribbon -Name MinimizedStateTabletModeOff -Value 0 -Force
 # Отключить поиск программ в Microsoft Store
-IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer))
+IF (-not (Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer))
 {
 	New-Item -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Force
 }
@@ -102,25 +102,25 @@ New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name 
 # Не показывать уведомление "Установлено новое приложение"
 New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer -Name NoNewAppAlert -Value 1 -Force
 # Отключить OneDrive
-IF (!(Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive))
+IF (-not (Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive))
 {
 	New-Item -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive -Force
 }
 New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive -Name DisableFileSyncNGSC -Value 1 -Force
 # Всегда ждать сеть при запуске и входе в систему
-IF (!(Test-Path -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\CurrentVersion\Winlogon"))
+IF (-not (Test-Path -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\CurrentVersion\Winlogon"))
 {
 	New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\CurrentVersion\Winlogon" -Force
 }
 New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name SyncForegroundPolicy -Value 1 -Force
 # Запрашивать подтверждение при удалении файлов
-IF (!(Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer))
+IF (-not (Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer))
 {
 	New-Item -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Force
 }
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name ConfirmFileDelete -Value 1 -Force
 # Не хранить сведения о зоне происхождения вложенных файлов
-IF (!(Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments))
+IF (-not (Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments))
 {
 	New-Item -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments -Force
 }
@@ -143,7 +143,7 @@ New-ItemProperty -Path "HKCU:\Control Panel\Accessibility\StickyKeys" -Name Flag
 # Отключить отображение вкладки "Предыдущие версии" в свойствах файлов
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name NoPreviousVersionsPage -Value 1 -Force
 # Изменить путь переменной среды для временных файлов
-IF (!(Test-Path -Path $env:SystemDrive\Temp))
+IF (-not (Test-Path -Path $env:SystemDrive\Temp))
 {
 	New-Item -Path $env:SystemDrive\Temp -ItemType Directory -Force
 }
@@ -227,7 +227,9 @@ $params = @{
 }
 Register-ScheduledTask @Params -User $env:USERNAME -RunLevel Highest -Force
 # Включить в Планировщике задач очистки временной папки
-$action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument 'Get-ChildItem -Path "$env:TEMP" -Recurse -Force | Remove-Item -Recurse -Force'
+$action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
+Get-ChildItem -Path `$env:TEMP -Force -Recurse | Remove-Item -Force -Recurse
+"@
 $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 61 -At 9am
 $settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
 $params = @{
@@ -241,7 +243,7 @@ Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 $xml = 'Программы\Прочее\xml\SoftwareDistribution.xml'
 function Get-ResolvedPath
 {
-	param ([Parameter(ValueFromPipeline=1)]$Path)
+	param ([Parameter(ValueFromPipeline = 1)]$Path)
 	(Get-Disk | Where-Object {$_.BusType -eq "USB"} | Get-Partition | Get-Volume | Where-Object {$null -ne $_.DriveLetter}).DriveLetter | ForEach-Object {Join-Path ($_ + ":") $Path -Resolve -ErrorAction SilentlyContinue}
 }
 $xml | Get-ResolvedPath | Get-Item | Get-Content -Raw | Register-ScheduledTask -TaskName "SoftwareDistribution" -Force
@@ -317,7 +319,7 @@ IF ($drives)
 	}
 }
 # Отключить справку по F1
-IF (!(Test-Path "HKCU:\Software\Classes\Typelib\{8cec5860-07a1-11d9-b15e-000d56bfe6ee}\1.0\0\win64"))
+IF (-not (Test-Path "HKCU:\Software\Classes\Typelib\{8cec5860-07a1-11d9-b15e-000d56bfe6ee}\1.0\0\win64"))
 {
 	New-Item -Path "HKCU:\Software\Classes\Typelib\{8cec5860-07a1-11d9-b15e-000d56bfe6ee}\1.0\0\win64" -Force
 }
@@ -346,7 +348,7 @@ IF ((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType -eq 1)
 	$adapter | Set-NetAdapterPowerManagement
 }
 # Переопределить пользовательский метод ввода на английский язык на экране входа
-IF (!(Test-Path -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International"))
+IF (-not (Test-Path -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International"))
 {
 	New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International" -Force
 }
@@ -354,7 +356,7 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\Internat
 New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 1 -PropertyType String -Value 00000409 -Force
 New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 2 -PropertyType String -Value 00000419 -Force
 # Открепить значок Магазина на панели задач
-IF (!(Test-Path -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer))
+IF (-not (Test-Path -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer))
 {
 	New-Item -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer -Force
 }
@@ -377,7 +379,7 @@ $getstring = Add-Type $getstring -PassThru -Name GetStr -Using System.Text
 $unpinFromStart = $getstring[0]::GetString(5387)
 (New-Object -Com Shell.Application).NameSpace("shell:::{4234d49b-0245-4df3-b780-3893943456e1}").Items() | ForEach-Object { $_.Verbs() | Where-Object {$_.Name -eq $unpinFromStart} | ForEach-Object {$_.DoIt()}}
 # Добавить пункт "Извлечь" для MSI в контекстное меню
-IF (!(Test-Path -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлечь\Command))
+IF (-not (Test-Path -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлечь\Command))
 {
 	New-Item -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлечь\Command -Force
 }
@@ -475,7 +477,7 @@ IF ($getdisk -eq $drive)
 	$Desktop = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Desktop
 	IF ($Desktop -ne "${drive}:\Рабочий стол")
 	{
-		IF (!(Test-Path -Path "${drive}:\Рабочий стол"))
+		IF (-not (Test-Path -Path "${drive}:\Рабочий стол"))
 		{
 			New-Item -Path "${drive}:\Рабочий стол" -ItemType Directory -Force
 		}
@@ -491,7 +493,7 @@ IF ($getdisk -eq $drive)
 	$Documents = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Personal
 	IF ($Documents -ne "${drive}:\Документы")
 	{
-		IF (!(Test-Path -Path "${drive}:\Документы"))
+		IF (-not (Test-Path -Path "${drive}:\Документы"))
 		{
 			New-Item -Path "${drive}:\Документы" -ItemType Directory -Force
 		}
@@ -507,7 +509,7 @@ IF ($getdisk -eq $drive)
 	$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{374DE290-123F-4565-9164-39C4925E467B}"
 	IF ($Downloads -ne "${drive}:\Загрузки")
 	{
-		IF (!(Test-Path -Path "${drive}:\Загрузки"))
+		IF (-not (Test-Path -Path "${drive}:\Загрузки"))
 		{
 			New-Item -Path "${drive}:\Загрузки" -ItemType Directory -Force
 		}
@@ -523,7 +525,7 @@ IF ($getdisk -eq $drive)
 	$Music = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Music"
 	IF ($Music -ne "${drive}:\Музыка")
 	{
-		IF (!(Test-Path -Path "${drive}:\Музыка"))
+		IF (-not (Test-Path -Path "${drive}:\Музыка"))
 		{
 			New-Item -Path "${drive}:\Музыка" -ItemType Directory -Force
 		}
@@ -539,7 +541,7 @@ IF ($getdisk -eq $drive)
 	$Pictures = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Pictures"
 	IF ($Pictures -ne "${drive}:\Изображения")
 	{
-		IF (!(Test-Path -Path "${drive}:\Изображения"))
+		IF (-not (Test-Path -Path "${drive}:\Изображения"))
 		{
 			New-Item -Path "${drive}:\Изображения" -ItemType Directory -Force
 		}
@@ -555,7 +557,7 @@ IF ($getdisk -eq $drive)
 	$Videos = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Video"
 	IF ($Videos -ne "${drive}:\Видео")
 	{
-		IF (!(Test-Path -Path "${drive}:\Видео"))
+		IF (-not (Test-Path -Path "${drive}:\Видео"))
 		{
 			New-Item -Path "${drive}:\Видео" -ItemType Directory -Force
 		}
