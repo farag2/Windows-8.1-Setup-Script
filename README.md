@@ -1,6 +1,6 @@
 Save a script file in UTF-8 with BOM encoding
 
-Always use latest Windows 8.1 Pro x64 version `
+Always use latest Windows 8.1 Pro x64 version
 https://support.microsoft.com/id-id/help/4009470/windows-8-1-windows-server-2012-r2-update-history
 
 Read the script carefully before excuting commands.
