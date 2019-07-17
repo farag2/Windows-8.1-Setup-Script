@@ -1,3 +1,6 @@
+# Сlear $Error
+# Очистка $Error
+$Error.Clear()
 # Отключить службы диагностического отслеживания
 Get-Service -ServiceName DiagTrack | Stop-Service
 Get-Service -ServiceName DiagTrack | Set-Service -StartupType Disabled
@@ -13,31 +16,30 @@ Remove-ItemProperty -Path HKCU:\Software\Microsoft\Siuf\Rules -Name PeriodInNano
 # Отключить задачи диагностического отслеживания в Планировщике задач
 Unregister-ScheduledTask -TaskName "Optimize Start Menu*" -Confirm:$false
 $tasks = @(
-"AitAgent",
-"BackupTask",
-"BthSQM",
-"Consolidator",
-"FamilySafetyMonitor",
-"FamilySafetyRefresh",
-"FamilySafetyUpload",
-"File History (maintenance mode)",
-"GatherNetworkInfo",
-"Idle Sync Maintenance Task",
-"KernelCeipTask",
-"Microsoft Compatibility Appraiser",
-"Microsoft-Windows-DiskDiagnosticDataCollector",
-"MNO Metadata Parser",
-"NetworkStateChangeTask",
-"ProgramDataUpdater",
-"Proxy",
-"QueueReporting",
-"Routine Maintenance Task",
-"SilentCleanup",
-"SmartScreenSpecific",
-"StartupAppTask",
-"UsbCeip",
-"WinSAT",
-"SqmUpload_*")
+	"AitAgent",
+	"BackupTask",
+	"BthSQM",
+	"Consolidator",
+	"FamilySafetyMonitor",
+	"FamilySafetyRefresh",
+	"FamilySafetyUpload",
+	"File History (maintenance mode)",
+	"GatherNetworkInfo",
+	"Idle Sync Maintenance Task",
+	"KernelCeipTask",
+	"Microsoft Compatibility Appraiser",
+	"Microsoft-Windows-DiskDiagnosticDataCollector",
+	"MNO Metadata Parser",
+	"NetworkStateChangeTask",
+	"ProgramDataUpdater",
+	"Proxy",
+	"QueueReporting",
+	"Routine Maintenance Task",
+	"SmartScreenSpecific",
+	"StartupAppTask",
+	"UsbCeip",
+	"WinSAT",
+	"SqmUpload_*")
 Foreach ($task in $tasks)
 {
 	Get-ScheduledTask -TaskName $task | Disable-ScheduledTask
@@ -162,21 +164,21 @@ Get-AppxPackage -AllUsers | Remove-AppxPackage -ErrorAction SilentlyContinue
 Get-AppxProvisionedPackage -Online | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
 # Отключить компоненты
 $features = @(
-# Отключить службу "Факсы и сканирование"
-"FaxServicesClientPackage",
-# Отключить компоненты прежних версий
-"LegacyComponents",
-# Отключение компонентов работы с мультимедиа
-"MediaPlayback",
-# Отключить PowerShell 2.0
-"MicrosoftWindowsPowerShellV2",
-"MicrosoftWindowsPowershellV2Root",
-# Отключить службу XPS
-"Printing-XPSServices-Features",
-# Отключить службу "Клиент рабочих папок"
-"WorkFolders-Client",
-# Отключить просмотрщик XPS
-"Xps-Foundation-Xps-Viewer")
+	# Отключить службу "Факсы и сканирование"
+	"FaxServicesClientPackage",
+	# Отключить компоненты прежних версий
+	"LegacyComponents",
+	# Отключение компонентов работы с мультимедиа
+	"MediaPlayback",
+	# Отключить PowerShell 2.0
+	"MicrosoftWindowsPowerShellV2",
+	"MicrosoftWindowsPowershellV2Root",
+	# Отключить службу XPS
+	"Printing-XPSServices-Features",
+	# Отключить службу "Клиент рабочих папок"
+	"WorkFolders-Client",
+	# Отключить просмотрщик XPS
+	"Xps-Foundation-Xps-Viewer")
 Foreach ($feature in $features)
 {
 	Disable-WindowsOptionalFeature -Online -FeatureName $feature -NoRestart
@@ -220,35 +222,38 @@ $action = New-ScheduledTaskAction -Execute "$env:SystemRoot\System32\cleanmgr.ex
 $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 90 -At 9am
 $settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
 $params = @{
-"TaskName"	= "Update Cleanup"
-"Action"	= $action
-"Trigger"	= $trigger
-"Settings"	= $settings
+	"TaskName"	= "Update Cleanup"
+	"Action"	= $action
+	"Trigger"	= $trigger
+	"Settings"	= $settings
 }
 Register-ScheduledTask @Params -User $env:USERNAME -RunLevel Highest -Force
 # Включить в Планировщике задач очистки временной папки
-$action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
-Get-ChildItem -Path `$env:TEMP -Force -Recurse | Remove-Item -Force -Recurse
+$action = New-ScheduledTaskAction -Execute powershell.exe -Argument @"
+	Get-ChildItem -Path `$env:TEMP -Force -Recurse | Remove-Item -Force -Recurse
 "@
 $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 61 -At 9am
 $settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
 $params = @{
-"TaskName"	= "Temp"
-"Action"	= $action
-"Trigger"	= $trigger
-"Settings"	= $settings
+	"TaskName"	= "Temp"
+	"Action"	= $action
+	"Trigger"	= $trigger
+	"Settings"	= $settings
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 # Включить в Планировщике задач очистку папки %SYSTEMROOT%\SoftwareDistribution\Download
 $xml = 'Программы\Прочее\xml\SoftwareDistribution.xml'
 function Get-ResolvedPath
 {
-	param ([Parameter(ValueFromPipeline = 1)]$Path)
-	(Get-Disk | Where-Object {$_.BusType -eq "USB"} | Get-Partition | Get-Volume | Where-Object {$null -ne $_.DriveLetter}).DriveLetter | ForEach-Object {Join-Path ($_ + ":") $Path -Resolve -ErrorAction SilentlyContinue}
+	param (
+		[Parameter(ValueFromPipeline = 1)]
+		$Path
+	)
+	(Get-Disk | Where-Object -FilterScript {$_.BusType -eq "USB"} | Get-Partition | Get-Volume | Where-Object -FilterScript {$null -ne $_.DriveLetter}).DriveLetter | ForEach-Object -Process {Join-Path ($_ + ":") $Path -Resolve -ErrorAction SilentlyContinue}
 }
 $xml | Get-ResolvedPath | Get-Item | Get-Content -Raw | Register-ScheduledTask -TaskName "SoftwareDistribution" -Force
 # Включить в Планировщике задач очистки папки %SYSTEMROOT%\LiveKernelReports
-$action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
+$action = New-ScheduledTaskAction -Execute powershell.exe -Argument @"
 `$dir = '$env:SystemRoot\LiveKernelReports'
 `$foldersize = (Get-ChildItem -Path `$dir -Recurse | Measure-Object -Property Length -Sum).Sum/1MB
 IF (`$foldersize -GT 100)
@@ -259,40 +264,42 @@ IF (`$foldersize -GT 100)
 $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 62 -At 9am
 $settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
 $params = @{
-"TaskName"	= "LiveKernelReports"
-"Action"	= $action
-"Trigger"	= $trigger
-"Settings"	= $settings
+	"TaskName"	= "LiveKernelReports"
+	"Action"	= $action
+	"Trigger"	= $trigger
+	"Settings"	= $settings
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 # Включить в Планировщике задач очистки папки %SYSTEMROOT%\Logs\CBS
-$action = New-ScheduledTaskAction -Execute "Powershell.exe" -Argument @"
-`$dir = '$env:SystemRoot\Logs\CBS'
-`$foldersize = (Get-ChildItem -Path `$dir -Recurse | Measure-Object -Property Length -Sum).Sum/1MB
-IF (`$foldersize -GT 10)
-{
-	Get-ChildItem -Path `$dir -Recurse -Force | Remove-Item -Recurse -Force
-}
+$action = New-ScheduledTaskAction -Execute powershell.exe -Argument @"
+	`$dir = '$env:SystemRoot\Logs\CBS'
+	`$foldersize = (Get-ChildItem -Path `$dir -Recurse | Measure-Object -Property Length -Sum).Sum/1MB
+	IF (`$foldersize -GT 10)
+	{
+		Get-ChildItem -Path `$dir -Recurse -Force | Remove-Item -Recurse -Force
+	}
 "@
 $trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 62 -At 9am
 $settings = New-ScheduledTaskSettingsSet -Compatibility Win8 -StartWhenAvailable
 $params = @{
-"TaskName"	= "CBS"
-"Action"	= $action
-"Trigger"	= $trigger
-"Settings"	= $settings
+	"TaskName"	= "CBS"
+	"Action"	= $action
+	"Trigger"	= $trigger
+	"Settings"	= $settings
 }
 Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 # Установить схему управления питания для стационарного ПК и ноутбука
 IF ((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType -eq 1)
 {
-	# Cтационарный ПК
-	powercfg /s 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+	# High performance for desktop
+	# Высокая производительность для стационарного ПК
+	powercfg /setactive SCHEME_MIN
 }
-Else
+IF ((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType -eq 2)
 {
-	# Ноутбук
-	powercfg /s 381b4222-f694-41f0-9685-ff5bb260df2e
+	# Balanced for laptop
+	# Сбалансированная для ноутбука
+	powercfg /setactive SCHEME_BALANCED
 }
 # Использовать последнюю установленную версию .NET Framework для всех приложений
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\.NETFramework -Name OnlyUseLatestCLR -Value 1 -Force
@@ -303,19 +310,20 @@ New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Control Panel\Keyboard" -N
 $file = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\Modules\Defender\Defender.psd1"
 cmd.exe /c "takeown /F %WINDIR%\system32\WindowsPowerShell\v1.0\Modules\Defender\Defender.psd1"
 cmd.exe /c "icacls %WINDIR%\system32\WindowsPowerShell\v1.0\Modules\Defender\Defender.psd1 /grant:r Администраторы:F"
-(Get-Content $file) | ForEach-Object {
+(Get-Content $file) | ForEach-Object -Process {
 	$_.replace("'MSFT_MpSignature.cdxml',", "'MSFT_MpSignature.cdxml')").
 	replace("'MSFT_MpWDOScan.cdxml')", "").
 	replace("'Remove-MpThreat',", "'Remove-MpThreat')").
 	replace("'Start-MpWDOScan')", "")
 } | Out-File $file
-$drives = Get-Disk | Where-Object {$_.IsBoot -eq $false}
+$drives = Get-Disk | Where-Object -FilterScript {$_.IsBoot -eq $false}
 IF ($drives)
 {
-	$drives = ($drives | Get-Partition | Get-Volume | Where-Object {$null -ne $_.DriveLetter}).DriveLetter | ForEach-Object {$_ + ':'}
-	Foreach ($drive In $drives)
+	$drives = ($drives | Get-Partition | Get-Volume | Where-Object -FilterScript {$null -ne $_.DriveLetter}).DriveLetter | ForEach-Object -Process {Join-Path ($_ + ":") $Path -Resolve -ErrorAction SilentlyContinue}
+	Foreach ($drive in $drives)
 	{
-		Add-MpPreference -ExclusionPath $drive\Программы\Прочее -Force
+		$folder = "Программы\Прочее"
+		Add-MpPreference -ExclusionPath (Join-Path -Path $drive -ChildPath $folder) -Force
 	}
 }
 # Отключить справку по F1
@@ -361,32 +369,42 @@ IF (-not (Test-Path -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer))
 	New-Item -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer -Force
 }
 New-ItemProperty -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer -Name NoPinningStoreToTaskbar -Value 1 -Force
-# Открепить от панели задач Microsoft Store
-$getstring = @'
-[DllImport("kernel32.dll", CharSet = CharSet.Auto)]
-public static extern IntPtr GetModuleHandle(string lpModuleName);
-[DllImport("user32.dll", CharSet = CharSet.Auto)]
-internal static extern int LoadString(IntPtr hInstance, uint uID, StringBuilder lpBuffer, int nBufferMax);
-public static string GetString(uint strId)
-{
-	IntPtr intPtr = GetModuleHandle("shell32.dll");
-	StringBuilder sb = new StringBuilder(255);
-	LoadString(intPtr, strId, sb, sb.Capacity);
-	return sb.ToString();
+# Открепить Microsoft Edge от панели задач
+$Signature = @{
+	Namespace = "WinAPI"
+	Name = "GetStr"
+	Language = "CSharp"
+	MemberDefinition = @"
+	[DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+	public static extern IntPtr GetModuleHandle(string lpModuleName);
+	[DllImport("user32.dll", CharSet = CharSet.Auto)]
+	internal static extern int LoadString(IntPtr hInstance, uint uID, StringBuilder lpBuffer, int nBufferMax);
+	public static string GetString(uint strId)
+	{
+		IntPtr intPtr = GetModuleHandle("shell32.dll");
+		StringBuilder sb = new StringBuilder(255);
+		LoadString(intPtr, strId, sb, sb.Capacity);
+		return sb.ToString();
+	}
+"@
 }
-'@
-$getstring = Add-Type $getstring -PassThru -Name GetStr -Using System.Text
-$unpinFromStart = $getstring[0]::GetString(5387)
-(New-Object -Com Shell.Application).NameSpace("shell:::{4234d49b-0245-4df3-b780-3893943456e1}").Items() | ForEach-Object { $_.Verbs() | Where-Object {$_.Name -eq $unpinFromStart} | ForEach-Object {$_.DoIt()}}
-# Добавить пункт "Извлечь" для MSI в контекстное меню
-IF (-not (Test-Path -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлечь\Command))
+IF (-not ("WinAPI.GetStr" -as [type]))
 {
-	New-Item -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлечь\Command -Force
+	Add-Type @Signature -Using System.Text
 }
-New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Извлечь\Command -Name "(Default)" -PropertyType String -Value 'msiexec.exe /a "%1" /qb TARGETDIR="%1 extracted"' -Force
+$unpin = [WinAPI.GetStr]::GetString(5387)
+(New-Object -Com Shell.Application).NameSpace("shell:::{4234d49b-0245-4df3-b780-3893943456e1}").Items() | ForEach-Object -Process {$_.Verbs() | Where-Object -FilterScript {$_.Name -eq $unpin} | ForEach-Object -Process {$_.DoIt()}}
+# Добавить пункт "Extract" для MSI в контекстное меню
+IF (-not (Test-Path -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Extract\Command))
+{
+	New-Item -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Extract\Command -Force
+}
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Extract\Command -Name "(default)" -PropertyType String -Value 'msiexec.exe /a "%1" /qb TARGETDIR="%1 extracted"' -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Extract -Name MUIVerb -PropertyType String -Value "@shell32.dll,-31382" -Force
+New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Msi.Package\shell\Extract -Name Icon -PropertyType String -Value "shell32.dll,-16817" -Force
 # Удалить принтеры
 Remove-Printer -Name Fax, "Microsoft XPS Document Writer" -ErrorAction SilentlyContinue
-# Добавить "Запуск от имени друго пользователя" в контекстное меню для exe-файлов
+# Добавить "Запуск от имени другого пользователя" в контекстное меню для exe-файлов
 New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name "(Default)" -PropertyType String -Value "@shell32.dll,-50944" -Force
 Remove-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name Extended -Force
 New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\exefile\shell\runasuser -Name SuppressionPolicyEx -PropertyType String -Value "{F211AA05-D4DF-4370-A2A0-9F19C09756A7}" -Force
@@ -399,15 +417,15 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVers
 # Удалить пункт "Отправить" из контекстного меню
 New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\AllFilesystemObjects\shellex\ContextMenuHandlers\SendTo -Name "(Default)" -PropertyType String -Value "" -Force
 # Удалить пункт "Включить Bitlocker" из контекстного меню
-IF (Get-WindowsEdition -Online | Where-Object {$_.Edition -eq "Professional" -or $_.Edition -eq "Enterprise"})
+IF (Get-WindowsEdition -Online | Where-Object -FilterScript {$_.Edition -eq "Professional" -or $_.Edition -eq "Enterprise"})
 {
 	$keys = @(
-	"encrypt-bde",
-	"encrypt-bde-elev",
-	"manage-bde",
-	"resume-bde",
-	"resume-bde-elev",
-	"unlock-bde")
+		"encrypt-bde",
+		"encrypt-bde-elev",
+		"manage-bde",
+		"resume-bde",
+		"resume-bde-elev",
+		"unlock-bde")
 	Foreach ($key in $keys)
 	{
 		New-ItemProperty -Path Registry::HKEY_CLASSES_ROOT\Drive\shell\$key -Name ProgrammaticAccessOnly -PropertyType String -Value "" -Force
@@ -441,144 +459,326 @@ Function KnownFolderPath
 {
 	Param (
 		[Parameter(Mandatory = $true)]
-		[ValidateSet('Desktop', 'Documents', 'Downloads', 'Music', 'Pictures', 'Videos')]
+		[ValidateSet("Desktop", "Documents", "Downloads", "Music", "Pictures", "Videos")]
 		[string]$KnownFolder,
 
 		[Parameter(Mandatory = $true)]
 		[string]$Path
 	)
 	$KnownFolders = @{
-		'Desktop'	= @('B4BFCC3A-DB2C-424C-B029-7FE99A87C641');
-		'Documents'	= @('FDD39AD0-238F-46AF-ADB4-6C85480369C7', 'f42ee2d3-909f-4907-8871-4c22fc0bf756');
-		'Downloads'	= @('374DE290-123F-4565-9164-39C4925E467B', '7d83ee9b-2244-4e70-b1f5-5393042af1e4');
-		'Music'		= @('4BD8D571-6D19-48D3-BE97-422220080E43', 'a0c69a99-21c8-4671-8703-7934162fcf1d');
-		'Pictures'	= @('33E28130-4E1E-4676-835A-98395C3BC3BB', '0ddd015d-b06c-45d5-8c4c-f59713854639');
-		'Videos'	= @('18989B1D-99B5-455B-841C-AB7C74E4DDFC', '35286a68-3c57-41a1-bbb1-0eae73d76c95');
+		"Desktop"	= @("B4BFCC3A-DB2C-424C-B029-7FE99A87C641");
+		"Documents"	= @("FDD39AD0-238F-46AF-ADB4-6C85480369C7", "f42ee2d3-909f-4907-8871-4c22fc0bf756");
+		"Downloads"	= @("374DE290-123F-4565-9164-39C4925E467B", "7d83ee9b-2244-4e70-b1f5-5393042af1e4");
+		"Music"		= @("4BD8D571-6D19-48D3-BE97-422220080E43", "a0c69a99-21c8-4671-8703-7934162fcf1d");
+		"Pictures"	= @("33E28130-4E1E-4676-835A-98395C3BC3BB", "0ddd015d-b06c-45d5-8c4c-f59713854639");
+		"Videos"	= @("18989B1D-99B5-455B-841C-AB7C74E4DDFC", "35286a68-3c57-41a1-bbb1-0eae73d76c95");
 	}
-	$Type = ([System.Management.Automation.PSTypeName]'KnownFolders').Type
-	$Signature = @'
-	[DllImport("shell32.dll")]
-	public extern static int SHSetKnownFolderPath(ref Guid folderId, uint flags, IntPtr token, [MarshalAs(UnmanagedType.LPWStr)] string path);
-'@
-	$Type = Add-Type -MemberDefinition $Signature -Name 'KnownFolders' -Namespace 'SHSetKnownFolderPath' -PassThru
-	# return $Type::SHSetKnownFolderPath([ref]$KnownFolders[$KnownFolder], 0, 0, $Path)
-	ForEach ($guid in $KnownFolders[$KnownFolder])
+	$Signature = @{
+	Namespace = "WinAPI"
+	Name = "KnownFolders"
+	Language = "CSharp"
+	MemberDefinition = @"
+		[DllImport("shell32.dll")]
+		public extern static int SHSetKnownFolderPath(ref Guid folderId, uint flags, IntPtr token, [MarshalAs(UnmanagedType.LPWStr)] string path);
+"@
+	}
+	IF (-not ("WinAPI.KnownFolders" -as [type]))
 	{
-		$Type::SHSetKnownFolderPath([ref]$guid, 0, 0, $Path)
+		Add-Type @Signature
+	}
+	foreach ($guid in $KnownFolders[$KnownFolder])
+	{
+		[WinAPI.KnownFolders]::SHSetKnownFolderPath([ref]$guid, 0, 0, $Path)
 	}
 	Attrib +r $Path
 }
-$getdisk = (Get-Disk | Where-Object {$_.BusType -ne "USB"} | Get-Partition | Get-Volume).DriveLetter
+[hashtable] $desktopini = @{
+	"Desktop"	=	'',
+					'[.ShellClassInfo]','LocalizedResourceName=@%SystemRoot%\system32\shell32.dll,-21769',
+					'IconResource=%SystemRoot%\system32\imageres.dll,-183'
+	"Documents"	=	'',
+					'[.ShellClassInfo]','LocalizedResourceName=@%SystemRoot%\system32\shell32.dll,-21770',
+					'IconResource=%SystemRoot%\system32\imageres.dll,-112','IconFile=%SystemRoot%\system32\shell32.dll',
+					'IconIndex=-235'
+	"Downloads"	=	'',
+					'[.ShellClassInfo]','LocalizedResourceName=@%SystemRoot%\system32\shell32.dll,-21798',
+					'IconResource=%SystemRoot%\system32\imageres.dll,-184'
+	"Music"		=	'',
+					'[.ShellClassInfo]','LocalizedResourceName=@%SystemRoot%\system32\shell32.dll,-21790',
+					'InfoTip=@%SystemRoot%\system32\shell32.dll,-12689',
+					'IconResource=%SystemRoot%\system32\imageres.dll,-108',
+					'IconFile=%SystemRoot%\system32\shell32.dll','IconIndex=-237'
+	"Pictures"	=	'',
+					'[.ShellClassInfo]',
+					'LocalizedResourceName=@%SystemRoot%\system32\shell32.dll,-21779',
+					'InfoTip=@%SystemRoot%\system32\shell32.dll,-12688',
+					'IconResource=%SystemRoot%\system32\imageres.dll,-113',
+					'IconFile=%SystemRoot%\system32\shell32.dll',
+					'IconIndex=-236'
+	"Videos"	=	'',
+					'[.ShellClassInfo]',
+					'LocalizedResourceName=@%SystemRoot%\system32\shell32.dll,-21791',
+					'InfoTip=@%SystemRoot%\system32\shell32.dll,-12690',
+					'IconResource=%SystemRoot%\system32\imageres.dll,-189',
+					'IconFile=%SystemRoot%\system32\shell32.dll','IconIndex=-238'
+}
+$drives = (Get-Disk | Where-Object -FilterScript {$_.BusType -ne "USB"} | Get-Partition | Get-Volume).DriveLetter
 # Рабочий стол
-$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Рабочий стол`". `nЧтобы пропустить, нажмите Enter"
-IF ($getdisk -eq $drive)
+Do
 {
-	$drive = $(${drive}.ToUpper())
-	$Desktop = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Desktop
-	IF ($Desktop -ne "${drive}:\Рабочий стол")
+	$drive = Read-Host -Prompt "Type the drive letter in the root of which the `"Desktop`" folder will be created.
+Press Enter to skip
+`nВведите букву диска, в корне которого будет создана папка `"Рабочий стол`".
+Чтобы пропустить, нажмите Enter"
+	IF ($drives -eq $drive)
 	{
-		IF (-not (Test-Path -Path "${drive}:\Рабочий стол"))
+		$drive = $(${drive}.ToUpper())
+		$regdesktop = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Desktop
+		IF ($regdesktop -ne "${drive}:\Desktop")
 		{
-			New-Item -Path "${drive}:\Рабочий стол" -ItemType Directory -Force
+			IF (-not (Test-Path -Path "${drive}:\Desktop"))
+			{
+				New-Item -Path "${drive}:\Desktop" -ItemType Directory -Force
+			}
+			KnownFolderPath -KnownFolder Desktop -Path "${drive}:\Desktop"
+			New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{754AC886-DF64-4CBA-86B5-F7FBF4FBCEF5}" -PropertyType ExpandString -Value "${drive}:\Desktop" -Force
+			Set-Content -Path "${drive}:\Desktop\desktop.ini" -Value $desktopini["Desktop"] -Encoding Unicode -Force
+			(Get-Item -Path "${drive}:\Desktop\desktop.ini").Attributes = "Hidden", "System", "Archive"
 		}
-		KnownFolderPath -KnownFolder Desktop -Path "${drive}:\Рабочий стол"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{754AC886-DF64-4CBA-86B5-F7FBF4FBCEF5}" -PropertyType ExpandString -Value "${drive}:\Рабочий стол" -Force
+	}
+	elseif ([string]::IsNullOrEmpty($drive))
+	{
+		break
+	}
+	else
+	{
+		Read-Host -Prompt "`nThe disk does not exist. Press Enter to skip
+`nДиск не существует. Введите букву диска.
+Чтобы пропустить, нажмите Enter"
 	}
 }
+Until ($drives -eq $drive)
 # Документы
-$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Документы`". `nЧтобы пропустить, нажмите Enter"
-IF ($getdisk -eq $drive)
+Do
 {
-	$drive = $(${drive}.ToUpper())
-	$Documents = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Personal
-	IF ($Documents -ne "${drive}:\Документы")
+	$drive = Read-Host -Prompt "Type the drive letter in the root of which the `"Documents`" folder will be created.
+Press Enter to skip
+`nВведите букву диска, в корне которого будет создана папка `"Документы`".
+Чтобы пропустить, нажмите Enter"
+	IF ($drives -eq $drive)
 	{
-		IF (-not (Test-Path -Path "${drive}:\Документы"))
+		$drive = $(${drive}.ToUpper())
+		$regdocuments = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Personal
+		IF ($regdocuments -ne "${drive}:\Documents")
 		{
-			New-Item -Path "${drive}:\Документы" -ItemType Directory -Force
+			IF (-not (Test-Path -Path "${drive}:\Documents"))
+			{
+				New-Item -Path "${drive}:\Documents" -ItemType Directory -Force
+			}
+			KnownFolderPath -KnownFolder Documents -Path "${drive}:\Documents"
+			New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -PropertyType ExpandString -Value "${drive}:\Documents" -Force
+			Set-Content -Path "${drive}:\Documents\desktop.ini" -Value $desktopini["Documents"] -Encoding Unicode -Force
+			(Get-Item -Path "${drive}:\Documents\desktop.ini").Attributes = "Hidden", "System", "Archive"
 		}
-		KnownFolderPath -KnownFolder Documents -Path "${drive}:\Документы"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{F42EE2D3-909F-4907-8871-4C22FC0BF756}" -PropertyType ExpandString -Value "${drive}:\Документы" -Force
+	}
+	elseif ([string]::IsNullOrEmpty($drive))
+	{
+		break
+	}
+	else
+	{
+		Read-Host -Prompt "`nThe disk does not exist. Press Enter to skip
+`nДиск не существует. Введите букву диска.
+Чтобы пропустить, нажмите Enter"
 	}
 }
+Until ($drives -eq $drive)
 # Загрузки
-$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Загрузки`". `nЧтобы пропустить, нажмите Enter"
-IF ($getdisk -eq $drive)
+Do
 {
-	$drive = $(${drive}.ToUpper())
-	$Downloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{374DE290-123F-4565-9164-39C4925E467B}"
-	IF ($Downloads -ne "${drive}:\Загрузки")
+	$drive = Read-Host -Prompt "Type the drive letter in the root of which the `"Downloads`" folder will be created.
+Press Enter to skip
+`nВведите букву диска, в корне которого будет создана папка `"Загрузки`".
+Чтобы пропустить, нажмите Enter"
+	IF ($drives -eq $drive)
 	{
-		IF (-not (Test-Path -Path "${drive}:\Загрузки"))
+		$drive = $(${drive}.ToUpper())
+		$regdownloads = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{374DE290-123F-4565-9164-39C4925E467B}"
+		IF ($regdownloads -ne "${drive}:\Downloads")
 		{
-			New-Item -Path "${drive}:\Загрузки" -ItemType Directory -Force
+			IF (-not (Test-Path -Path "${drive}:\Downloads"))
+			{
+				New-Item -Path "${drive}:\Downloads" -ItemType Directory -Force
+			}
+			KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Downloads"
+			New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -PropertyType ExpandString -Value "${drive}:\Downloads" -Force
+			Set-Content -Path "${drive}:\Downloads\desktop.ini" -Value $desktopini["Downloads"] -Encoding Unicode -Force
+			(Get-Item -Path "${drive}:\Downloads\desktop.ini").Attributes = "Hidden", "System", "Archive"
+			# Edge
+			$edge = (Get-AppxPackage "Microsoft.MicrosoftEdge").PackageFamilyName
+			New-ItemProperty -Path "HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\$edge\MicrosoftEdge\Main" -Name "Default Download Directory" -PropertyType String -Value "${drive}:\Downloads" -Force
 		}
-		KnownFolderPath -KnownFolder Downloads -Path "${drive}:\Загрузки"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{7D83EE9B-2244-4E70-B1F5-5393042AF1E4}" -PropertyType ExpandString -Value "${drive}:\Загрузки" -Force
+	}
+	elseif ([string]::IsNullOrEmpty($drive))
+	{
+		break
+	}
+	else
+	{
+		Read-Host -Prompt "`nThe disk does not exist. Press Enter to skip
+`nДиск не существует. Введите букву диска.
+Чтобы пропустить, нажмите Enter"
 	}
 }
+Until ($drives -eq $drive)
 # Музыка
-$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Музыка`". `nЧтобы пропустить, нажмите Enter"
-IF ($getdisk -eq $drive)
+Do
 {
-	$drive = $(${drive}.ToUpper())
-	$Music = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Music"
-	IF ($Music -ne "${drive}:\Музыка")
+	$drive = Read-Host -Prompt "Type the drive letter in the root of which the `"Music`" folder will be created.
+Press Enter to skip
+`nВведите букву диска, в корне которого будет создана папка `"Музыка`".
+Чтобы пропустить, нажмите Enter"
+	IF ($drives -eq $drive)
 	{
-		IF (-not (Test-Path -Path "${drive}:\Музыка"))
+		$drive = $(${drive}.ToUpper())
+		$regmusic = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Music"
+		IF ($regmusic -ne "${drive}:\Music")
 		{
-			New-Item -Path "${drive}:\Музыка" -ItemType Directory -Force
+			IF (-not (Test-Path -Path "${drive}:\Music"))
+			{
+				New-Item -Path "${drive}:\Music" -ItemType Directory -Force
+			}
+			KnownFolderPath -KnownFolder Music -Path "${drive}:\Music"
+			New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{A0C69A99-21C8-4671-8703-7934162FCF1D}" -PropertyType ExpandString -Value "${drive}:\Music" -Force
+			Set-Content -Path "${drive}:\Music\desktop.ini" -Value $desktopini["Music"] -Encoding Unicode -Force
+			(Get-Item -Path "${drive}:\Music\desktop.ini").Attributes = "Hidden", "System", "Archive"
 		}
-		KnownFolderPath -KnownFolder Music -Path "${drive}:\Музыка"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{A0C69A99-21C8-4671-8703-7934162FCF1D}" -PropertyType ExpandString -Value "${drive}:\Музыка" -Force
+	}
+	elseif ([string]::IsNullOrEmpty($drive))
+	{
+		break
+	}
+	else
+	{
+		Read-Host -Prompt "`nThe disk does not exist. Press Enter to skip
+`nДиск не существует. Введите букву диска.
+Чтобы пропустить, нажмите Enter"
 	}
 }
+Until ($drives -eq $drive)
 # Изображения
-$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Изображения`". `nЧтобы пропустить, нажмите Enter"
-IF ($getdisk -eq $drive)
+Do
 {
-	$drive = $(${drive}.ToUpper())
-	$Pictures = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Pictures"
-	IF ($Pictures -ne "${drive}:\Изображения")
+	$drive = Read-Host -Prompt "Type the drive letter in the root of which the `"Pictures`" folder will be created.
+Press Enter to skip
+`nВведите букву диска, в корне которого будет создана папка `"Изображения`".
+Чтобы пропустить, нажмите Enter"
+	IF ($drives -eq $drive)
 	{
-		IF (-not (Test-Path -Path "${drive}:\Изображения"))
+		$drive = $(${drive}.ToUpper())
+		$regpictures = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Pictures"
+		IF ($regpictures -ne "${drive}:\Pictures")
 		{
-			New-Item -Path "${drive}:\Изображения" -ItemType Directory -Force
+			IF (-not (Test-Path -Path "${drive}:\Pictures"))
+			{
+				New-Item -Path "${drive}:\Pictures" -ItemType Directory -Force
+			}
+			KnownFolderPath -KnownFolder Pictures -Path "${drive}:\Pictures"
+			New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{0DDD015D-B06C-45D5-8C4C-F59713854639}" -PropertyType ExpandString -Value "${drive}:\Pictures" -Force
+			Set-Content -Path "${drive}:\Pictures\desktop.ini" -Value $desktopini["Pictures"] -Encoding Unicode -Force
+			(Get-Item -Path "${drive}:\Pictures\desktop.ini").Attributes = "Hidden", "System", "Archive"
 		}
-		KnownFolderPath -KnownFolder Pictures -Path "${drive}:\Изображения"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{0DDD015D-B06C-45D5-8C4C-F59713854639}" -PropertyType ExpandString -Value "${drive}:\Изображения" -Force
+	}
+	elseif ([string]::IsNullOrEmpty($drive))
+	{
+		break
+	}
+	else
+	{
+		Read-Host -Prompt "`nThe disk does not exist. Press Enter to skip
+`nДиск не существует. Введите букву диска.
+Чтобы пропустить, нажмите Enter"
 	}
 }
+Until ($drives -eq $drive)
 # Видео
-$drive = Read-Host -Prompt "Введите букву диска, в корне которого будет создана папка `"Видео`". `nЧтобы пропустить, нажмите Enter"
-IF ($getdisk -eq $drive)
+Do
 {
-	$drive = $(${drive}.ToUpper())
-	$Videos = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Video"
-	IF ($Videos -ne "${drive}:\Видео")
+	$drive = Read-Host -Prompt "Type the drive letter in the root of which the `"Videos`" folder will be created.
+Press Enter to skip
+`nВведите букву диска, в корне которого будет создана папка `"Видео`".
+Чтобы пропустить, нажмите Enter"
+	IF ($drives -eq $drive)
 	{
-		IF (-not (Test-Path -Path "${drive}:\Видео"))
+		$drive = $(${drive}.ToUpper())
+		$regvideos = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "My Video"
+		IF ($regvideos -ne "${drive}:\Videos")
 		{
-			New-Item -Path "${drive}:\Видео" -ItemType Directory -Force
+			IF (-not (Test-Path -Path "${drive}:\Videos"))
+			{
+				New-Item -Path "${drive}:\Videos" -ItemType Directory -Force
+			}
+			KnownFolderPath -KnownFolder Videos -Path "${drive}:\Videos"
+			New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{35286A68-3C57-41A1-BBB1-0EAE73D76C95}" -PropertyType ExpandString -Value "${drive}:\Videos" -Force
+			Set-Content -Path "${drive}:\Videos\desktop.ini" -Value $desktopini["Videos"] -Encoding Unicode -Force
+			(Get-Item -Path "${drive}:\Videos\desktop.ini").Attributes = "Hidden", "System", "Archive"
 		}
-		KnownFolderPath -KnownFolder Videos -Path "${drive}:\Видео"
-		New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{35286A68-3C57-41A1-BBB1-0EAE73D76C95}" -PropertyType ExpandString -Value "${drive}:\Видео" -Force
+	}
+	elseif ([string]::IsNullOrEmpty($drive))
+	{
+		break
+	}
+	else
+	{
+		Read-Host -Prompt "`nThe disk does not exist. Press Enter to skip
+`nДиск не существует. Введите букву диска.
+Чтобы пропустить, нажмите Enter"
 	}
 }
-# Удалить %SYSTEMDRIVE%\PerfLogs
-IF ((Test-Path -Path $env:SystemDrive\PerfLogs))
-{
-	Remove-Item $env:SystemDrive\PerfLogs -Recurse -Force
+Until ($drives -eq $drive)
+# Удалить "$env:SystemDrive\PerfLogs"
+Remove-Item $env:SystemDrive\PerfLogs -Recurse -Force -ErrorAction SilentlyContinue
+# Удалить "$env:LOCALAPPDATA\Temp"
+Remove-Item $env:LOCALAPPDATA\Temp -Recurse -Force -ErrorAction SilentlyContinue
+# Удалить "$env:SYSTEMROOT\Temp"
+Restart-Service -ServiceName Spooler -Force
+Remove-Item -Path "$env:SystemRoot\Temp" -Recurse -Force -ErrorAction SilentlyContinue
+# Обновить иконки рабочего стола, переменные среды и панель задач без перезапуска "Проводника"
+$UpdateEnvExplorerAPI = @{
+	Namespace = "WinAPI"
+	Name = "UpdateEnvExplorer"
+	Language = "CSharp"
+	MemberDefinition = @"
+		private static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
+		private const int WM_SETTINGCHANGE = 0x1a;
+		private const int SMTO_ABORTIFHUNG = 0x0002;
+		[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+		static extern bool SendNotifyMessage(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam);
+		[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+		private static extern IntPtr SendMessageTimeout(IntPtr hWnd, int Msg, IntPtr wParam, string lParam, int fuFlags, int uTimeout, IntPtr lpdwResult);
+		[DllImport("shell32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+		private static extern int SHChangeNotify(int eventId, int flags, IntPtr item1, IntPtr item2);
+		public static void Refresh()
+		{
+			// Update desktop icons
+			SHChangeNotify(0x8000000, 0x1000, IntPtr.Zero, IntPtr.Zero);
+			// Update environment variables
+			SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, null, SMTO_ABORTIFHUNG, 100, IntPtr.Zero);
+			// Update taskbar
+			SendNotifyMessage(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings");
+		}
+"@
 }
-# Удалить %LOCALAPPDATA%\Temp
-IF ((Test-Path -Path $env:LOCALAPPDATA\Temp))
+if (-not ("WinAPI.UpdateEnvExplorer" -as [type]))
 {
-	Remove-Item $env:LOCALAPPDATA\Temp -Recurse -Force
+	Add-Type @UpdateEnvExplorerAPI
 }
-# Удалить %SYSTEMROOT%\Temp
-IF ((Test-Path -Path $env:SystemRoot\Temp))
-{
-	Restart-Service -ServiceName Spooler -Force
-	Remove-Item -Path "$env:SystemRoot\Temp" -Recurse -Force
-}
-Stop-Process -Name explorer
+[WinAPI.UpdateEnvExplorer]::Refresh()
+# Вывод ошибок
+Write-Host "`nErrors" -BackgroundColor Red
+($Error | Where-Object -FilterScript {$_ -notmatch "Taskmgr" -and $_ -notmatch "TaskManager"} | ForEach-Object {
+	[PSCustomObject] @{
+		Line = $_.InvocationInfo.ScriptLineNumber
+		Error = $_.Exception.Message
+	}
+} | Format-Table -AutoSize -Wrap | Out-String).Trim()
