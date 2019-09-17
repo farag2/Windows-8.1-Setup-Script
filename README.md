@@ -1,15 +1,30 @@
-Save a script file in UTF-8 with BOM encoding
+Windows 8.1 Setup Script
+========================================================
 
-Always use latest Windows 8.1 Pro x64 version
-https://support.microsoft.com/id-id/help/4009470/windows-8-1-windows-server-2012-r2-update-history
+## Overview
+The PowerShell script is a set of tweaks for fine-tuning the OS and automating the routine tasks.
 
-Read the script carefully before excuting commands.
-Some of them are presented only as an example.
+## NB
+- PowerShell and PowerShell ISE must be run with elevated privileges;
+- Set PowerShell execution policy <code>Set-ExecutionPolicy Unrestricted -Force</code> to be able to run .ps1 files.
+  - Read more about [execution policy](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies) 
+  
+## Usage
+To run the script:
+- Download [up-to-date version](https://github.com/farag2/Setup-Windows-8.1);
+- Check whether file is encoded in **UTF-8 with BOM** and run it through powershell.exe.
 
-Excute the script with powershell.exe or powershell_ise.exe
+or
 
-Ask question on the official thread
-http://forum.ru-board.com/topic.cgi?forum=62&topic=30859
+- Copy the script code and paste it into [PowerShell ISE](https://docs.microsoft.com/en-us/powershell/scripting/components/ise/windows-powershell-integrated-scripting-environment--ise-).
 
-Other usefull (no) scripts
-https://gist.github.com/farag2
+## FAQ
+Read the code you run carefully. Some functions are presented as an example only. You must be aware of the meaning of the functions in the code. **If you're not sure what the script does, do not run it.**
+
+Always use [latest](https://support.microsoft.com/id-id/help/4009470/windows-8-1-windows-server-2012-r2-update-history) Windows 8.1 Pro x64 version
+
+### Ask a question in
+ - [Ru-Board](http://forum.ru-board.com/topic.cgi?forum=62&topic=30617#15)
+ 
+## PS
+Collection of useful [scripts](https://gist.github.com/farag2)
