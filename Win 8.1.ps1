@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 # Remove all text from the current display
 # Очистить экран
 Clear-Host
@@ -415,7 +415,7 @@ IF ($taskmgr)
 {
 	$taskmgr.CloseMainWindow()
 }
-$taskmgr = Start-Process -FilePath taskmgr.exe -WindowStyle Hidden -PassThru
+Start-Process -FilePath .\Taskmgr.exe -WindowStyle Hidden -PassThru
 Do
 {
 	Start-Sleep -Milliseconds 100
@@ -425,6 +425,7 @@ Until ($preferences)
 Stop-Process -Name Taskmgr
 $preferences.Preferences[28] = 0
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\TaskManager -Name Preferences -PropertyType Binary -Value $preferences.Preferences -Force
+$Error.RemoveRange(0, $Error.Count)
 # Do not allow the computer to turn off the device to save power for desktop
 # Запретить отключение Ethernet-адаптера для экономии энергии для стационарного ПК
 
@@ -985,7 +986,7 @@ if (-not ("WinAPI.UpdateEnvExplorer" -as [type]))
 # Errors output
 # Вывод ошибок
 Write-Host "`nErrors" -BackgroundColor Red
-($Error | Where-Object -FilterScript {$_ -notmatch "Taskmgr" -and $_ -notmatch "TaskManager"} | ForEach-Object -Process {
+($Error | ForEach-Object -Process {
 	[PSCustomObject] @{
 		Line = $_.InvocationInfo.ScriptLineNumber
 		Error = $_.Exception.Message
