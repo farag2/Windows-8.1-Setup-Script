@@ -23,8 +23,8 @@ Read the code you run carefully. Some functions are presented as an example only
 
 Always use [latest](https://support.microsoft.com/id-id/help/4009470/windows-8-1-windows-server-2012-r2-update-history) Windows 8.1 Pro x64 version
 
-### Ask a question in
+### Ask a question щn
  - [Ru-Board](http://forum.ru-board.com/topic.cgi?forum=62&topic=30617#15)
  
 ## PS
-Collection of useful [scripts](https://gist.github.com/farag2)
+Collection of useful [scripts](https://github.com/farag2/Utilities)
