@@ -16,7 +16,7 @@
 .EXAMPLE
 	PS C:\WINDOWS\system32> & '.\Win 8.1.ps1'
 .NOTES
-	v4.1 — 03.03.2020
+	v4.2 — 19.03.2020
 	Written by: farag
 	Thanks to all ru-board.com members involved
 	Ask a question on
@@ -71,28 +71,6 @@ if (-not ([IntPtr]::Size -eq 8))
 # Сlear $Error variable
 # Очистка переменной $Error
 $Error.Clear()
-# Checking the file encoding if it runs locally
-# Проверка кодировки файла, если он запускается локально
-if ($PSCommandPath)
-{
-	[System.IO.FileInfo]$script = Get-Item -Path $PSCommandPath
-	$SequenceBOM = New-Object System.Byte[] 3
-	$reader = $script.OpenRead()
-	$bytesRead = $reader.Read($SequenceBOM, 0, 3)
-	$reader.Dispose()
-	if ($bytesRead -eq 3 -and $SequenceBOM[0] -ne 239 -and $SequenceBOM[1] -ne 187 -and $SequenceBOM[2] -ne 191)
-	{
-		if ($RU)
-		{
-			Write-Warning -Message "Файл не был сохранен в кодировке `"UTF-8 с BOM`""
-		}
-		else
-		{
-			Write-Warning -Message "The file wasn't saved in `"UTF-8 with BOM`" encoding"
-		}
-		break
-	}
-}
 # Set the encoding to UTF-8 without BOM for the PowerShell session
 # Установить кодировку UTF-8 без BOM для текущей сессии PowerShell
 if ($RU)
@@ -114,9 +92,9 @@ logman.exe stop Diagtrack-Listener -ets
 logman.exe stop SQMLogger -ets
 # Turn off the data collectors at the next computer restart
 # Отключить сборщики данных при следующем запуске ПК
-REG add HKLM\SYSTEM\CurrentControlSet\Control\WMI\Autologger\AutoLogger-Diagtrack-Listener /v Start /t REG_DWORD /d 0 /f
-REG add HKLM\SYSTEM\CurrentControlSet\Control\WMI\Autologger\DiagLog /v Start /t REG_DWORD /d 0 /f
-REG add HKLM\SYSTEM\CurrentControlSet\Control\WMI\Autologger\SQMLogger /v Start /t REG_DWORD /d 0 /f
+New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\AutoLogger-Diagtrack-Listener -Name Start -PropertyType DWord -Value 0 -Force
+New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\DiagLog -Name Start -PropertyType DWord -Value 0 -Force
+New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\SQMLogger -Name Start -PropertyType DWord -Value 0 -Force
 # Turn off Windows Error Reporting
 # Отключить отчеты об ошибках Windows
 New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\Windows Error Reporting" -Name Disabled -PropertyType DWord -Value 1 -Force
@@ -222,11 +200,9 @@ New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Ribbon -Name MinimizedStateTabletModeOff -PropertyType DWord -Value 0 -Force
 # Turn on recycle bin files delete confirmation
 # Запрашивать подтверждение на удаление файлов в корзину
-if (-not (Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer))
-{
-	New-Item -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Force
-}
-New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer -Name ConfirmFileDelete -PropertyType DWord -Value 1 -Force
+$ShellState = Get-ItemPropertyValue -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name ShellState
+$ShellState[4] = 51
+New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name ShellState -PropertyType Binary -Value $ShellState -Force
 # Turn off the "- Shortcut" name extension for new shortcuts
 # He дoбaвлять "- яpлык" для coздaвaeмыx яpлыкoв
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name link -PropertyType Binary -Value ([byte[]](00,00,00,00)) -Force
@@ -240,6 +216,7 @@ $Signature = @{
 	Name = "GetStr"
 	Language = "CSharp"
 	MemberDefinition = @"
+		// https://github.com/Disassembler0/Win10-Initial-Setup-Script/issues/8#issue-227159084
 		[DllImport("kernel32.dll", CharSet = CharSet.Auto)]
 		public static extern IntPtr GetModuleHandle(string lpModuleName);
 		[DllImport("user32.dll", CharSet = CharSet.Auto)]
@@ -257,6 +234,8 @@ if (-not ("WinAPI.GetStr" -as [type]))
 {
 	Add-Type @Signature -Using System.Text
 }
+# Extract the "Unpin from taskbar" string from shell32.dll
+# Извлечь строку "Открепить от панели задач" из shell32.dll
 $unpin = [WinAPI.GetStr]::GetString(5387)
 $apps = (New-Object -ComObject Shell.Application).NameSpace("shell:::{4234d49b-0245-4df3-b780-3893943456e1}").Items()
 $apps | Where-Object -FilterScript {$_.Path -eq "Microsoft.InternetExplorer.Default"} | ForEach-Object -Process {$_.Verbs() | Where-Object -FilterScript {$_.Name -eq $unpin} | ForEach-Object -Process {$_.DoIt()}}
@@ -268,6 +247,7 @@ if (-not (Test-Path -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explor
 }
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel -Name AllItemsIconView -PropertyType DWord -Value 0 -Force
 New-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel -Name StartupPage -PropertyType DWord -Value 1 -Force
+# Do not display lockscreen
 # Не отображать экран блокировки
 if (-not (Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\Personalization))
 {
@@ -287,8 +267,8 @@ New-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name JPEGImportQuality -Pr
 # Turn off the "Previous Versions" tab from properties context menu
 # Отключить вкладку "Предыдущие версии" в свойствах файлов и папок
 New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer -Name NoPreviousVersionsPage -PropertyType DWord -Value 1 -Force
-# Unpin Microsoft Store from taskbar
-# Открепить значок Магазина на панели задач
+# Unpin the Microsoft Store shortcut from taskbar
+# Открепить ярлык Магазина от панели задач
 if (-not (Test-Path -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer))
 {
 	New-Item -Path HKCU:\Software\Policies\Microsoft\Windows\Explorer -Force
@@ -467,13 +447,13 @@ if ((Get-CimInstance -ClassName Win32_ComputerSystem).PCSystemType -eq 1)
 # Set the default input method to the English language
 # Установить метод ввода по умолчанию на английский язык
 Set-WinDefaultInputMethodOverride "0409:00000409"
-#if (-not (Test-Path -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International"))
-#{
-#	New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International" -Force
-#}
-#New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International" -Name BlockUserInputMethodsForSignIn -PropertyType DWord -Value 1 -Force
-#New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 1 -PropertyType String -Value 00000409 -Force
-#New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 2 -PropertyType String -Value 00000419 -Force
+if (-not (Test-Path -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International"))
+{
+	New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International" -Force
+}
+New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Control Panel\International" -Name BlockUserInputMethodsForSignIn -PropertyType DWord -Value 1 -Force
+New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 1 -PropertyType String -Value 00000409 -Force
+New-ItemProperty -Path "Registry::HKEY_USERS\.DEFAULT\Keyboard Layout\Preload" -Name 2 -PropertyType String -Value 00000419 -Force
 # Remove printers
 # Удалить принтеры
 Remove-Printer -Name Fax, "Microsoft XPS Document Writer" -ErrorAction Ignore
@@ -615,8 +595,21 @@ do
 			(Get-Item -Path "$DesktopFolder\desktop.ini" -Force).Refresh()
 		}
 		# Save screenshots by pressing Win+PrtScr to the Desktop
-		# Сохранить скриншот по Win+PrtScr на рабочем столе
-		New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\FolderDescriptions\{b7bede81-df94-4682-a7d8-57a52620b86f}" -Name RelativePath -PropertyType String -Value $DesktopFolder -Force
+		# Сохранять скриншоты по нажатию Win+PrtScr на рабочем столе
+		$DesktopFolder = Get-ItemPropertyValue -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name Desktop
+		Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{B7BEDE81-DF94-4682-A7D8-57A52620B86F}" -Value $DesktopFolder -Force
+		# Save all opened folders in order to restore them after File Explorer restart
+		# Сохранить все открытые папки, чтобы восстановить их после перезапуска проводника
+		$OpenedFolders = (New-Object -ComObject "Shell.Application").Windows() | ForEach-Object -Process {$_.Document.Folder.Self.Path}
+		# In order for the changes to take effect the File Explorer process has to be restarted
+		# Чтобы изменения вступили в силу, необходимо перезапустить процесс проводника
+		Stop-Process -Name explorer -Force
+		# Restore closed folders
+		# Восстановить закрытые папки
+		if ($OpenedFolders)
+		{
+			Invoke-Item -Path $OpenedFolders
+		}
 	}
 	elseif ([string]::IsNullOrEmpty($drive))
 	{
@@ -1178,14 +1171,15 @@ Register-ScheduledTask @Params -User System -RunLevel Highest -Force
 #region End
 # Refresh desktop icons, environment variables and taskbar without restarting File Explorer
 # Обновить иконки рабочего стола, переменные среды и панель задач без перезапуска "Проводника"
-$UpdateEnvExplorerAPI = @{
+$UpdateExplorer = @{
 	Namespace = "WinAPI"
-	Name = "UpdateEnvExplorer"
+	Name = "UpdateExplorer"
 	Language = "CSharp"
 	MemberDefinition = @"
 		private static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
 		private const int WM_SETTINGCHANGE = 0x1a;
 		private const int SMTO_ABORTIFHUNG = 0x0002;
+
 		[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
 		static extern bool SendNotifyMessage(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam);
 		[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
@@ -1195,30 +1189,67 @@ $UpdateEnvExplorerAPI = @{
 		public static void Refresh()
 		{
 			// Update desktop icons
+			// Обновить иконки рабочего стола
 			SHChangeNotify(0x8000000, 0x1000, IntPtr.Zero, IntPtr.Zero);
 			// Update environment variables
+			// Обновить переменные среды
 			SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, null, SMTO_ABORTIFHUNG, 100, IntPtr.Zero);
 			// Update taskbar
+			// Обновить панель задач
 			SendNotifyMessage(HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "TraySettings");
+		}
+
+		private static readonly IntPtr hWnd = new IntPtr(65535);
+		private const int Msg = 273;
+		// Virtual key ID of the F5 in File Explorer
+		// Виртуальный код клавиши F5 в проводнике
+		private static readonly UIntPtr UIntPtr = new UIntPtr(41504);
+
+		[DllImport("user32.dll", SetLastError=true)]
+		public static extern int PostMessageW(IntPtr hWnd, uint Msg, UIntPtr wParam, IntPtr lParam);
+		public static void PostMessage()
+		{
+			// F5 pressing simulation to refresh the desktop
+			// Симуляция нажатия F5 для обновления рабочего стола
+			PostMessageW(hWnd, Msg, UIntPtr, IntPtr.Zero);
 		}
 "@
 }
-if (-not ("WinAPI.UpdateEnvExplorer" -as [type]))
+if (-not ("WinAPI.UpdateExplorer" -as [type]))
 {
-	Add-Type @UpdateEnvExplorerAPI
+	Add-Type @UpdateExplorer
 }
-[WinAPI.UpdateEnvExplorer]::Refresh()
+[WinAPI.UpdateExplorer]::Refresh()
+[WinAPI.UpdateExplorer]::PostMessage()
 
 # Errors output
 # Вывод ошибок
 if ($Error)
 {
-	Write-Host "`nWarnings/Errors" -BackgroundColor Red
+	if ($RU)
+	{
+		Write-Host "`nПредупреждения/ошибки" -BackgroundColor Red
+	}
+	else
+	{
+		Write-Host "`nWarnings/errors" -BackgroundColor Red
+	}
 	($Error | ForEach-Object -Process {
 		[PSCustomObject] @{
 			Line = $_.InvocationInfo.ScriptLineNumber
 			Error = $_.Exception.Message
 		}
 	} | Sort-Object -Property Line | Format-Table -AutoSize -Wrap | Out-String).Trim()
+}
+else
+{
+	if ($RU)
+	{
+		Write-Host "`nНет предупреждений/ошибок" -BackgroundColor Green
+	}
+	else
+	{
+		Write-Host "`nNo warnings/errors" -BackgroundColor Green
+	}
 }
 #endregion End
