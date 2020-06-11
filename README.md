@@ -1,7 +1,7 @@
 <div align="center">
-  <h1>Windows 10 Setup Script</h1>
+  <h1>Windows 8.1 Setup Script</h1>
 
-**"Windows 10 Setup Script" is a set of tweaks for OS fine-tuning and automating the routine tasks** 🏆
+**"Windows 8.1 Setup Script" is a set of tweaks for OS fine-tuning and automating the routine tasks** 🏆
 </div>
 
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q51QUJC)
