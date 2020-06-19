@@ -212,18 +212,6 @@ switch ($Result)
 Get-Service -ServiceName DiagTrack | Stop-Service
 Get-Service -ServiceName DiagTrack | Set-Service -StartupType Disabled
 
-# Stop event trace sessions
-# Остановить сеансы отслеживания событий
-logman.exe stop DiagLog -ets
-logman.exe stop Diagtrack-Listener -ets
-logman.exe stop SQMLogger -ets
-
-# Turn off the data collectors at the next computer restart
-# Отключить сборщики данных при следующем запуске ПК
-New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\AutoLogger-Diagtrack-Listener -Name Start -PropertyType DWord -Value 0 -Force
-New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\DiagLog -Name Start -PropertyType DWord -Value 0 -Force
-New-ItemProperty -Path HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\SQMLogger -Name Start -PropertyType DWord -Value 0 -Force
-
 # Turn off Windows Error Reporting
 # Отключить отчеты об ошибках Windows
 New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\Windows Error Reporting" -Name Disabled -PropertyType DWord -Value 1 -Force
