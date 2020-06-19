@@ -13,6 +13,10 @@
 	Set execution policy to be able to run scripts only in the current PowerShell session:
 		Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
 
+	Install before executing
+	https://www.microsoft.com/en-us/download/details.aspx?id=42642
+	https://docs.microsoft.com/ru-ru/powershell/scripting/windows-powershell/wmf/setup/install-configure
+
 	Running the script is best done on a fresh install
 .EXAMPLE
 	PS C:\> & '.\Win 8.1.ps1'
@@ -460,15 +464,18 @@ if (-not (Test-Path -Path $env:SystemDrive\Temp))
 	New-Item -Path $env:SystemDrive\Temp -ItemType Directory -Force
 }
 [Environment]::SetEnvironmentVariable("TMP", "$env:SystemDrive\Temp", "User")
-New-ItemProperty -Path HKCU:\Environment -Name TMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
-[Environment]::SetEnvironmentVariable("TEMP", "$env:SystemDrive\Temp", "User")
-New-ItemProperty -Path HKCU:\Environment -Name TEMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
 [Environment]::SetEnvironmentVariable("TMP", "$env:SystemDrive\Temp", "Machine")
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
-[Environment]::SetEnvironmentVariable("TEMP", "$env:SystemDrive\Temp", "Machine")
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TEMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
 [Environment]::SetEnvironmentVariable("TMP", "$env:SystemDrive\Temp", "Process")
+New-ItemProperty -Path HKCU:\Environment -Name TMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
+
+[Environment]::SetEnvironmentVariable("TEMP", "$env:SystemDrive\Temp", "User")
+[Environment]::SetEnvironmentVariable("TEMP", "$env:SystemDrive\Temp", "Machine")
 [Environment]::SetEnvironmentVariable("TEMP", "$env:SystemDrive\Temp", "Process")
+New-ItemProperty -Path HKCU:\Environment -Name TEMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
+
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" -Name TEMP -PropertyType ExpandString -Value %SystemDrive%\Temp -Force
+
 # Spooler restart
 # Перезапуск Диспетчер печати
 Restart-Service -Name Spooler -Force
@@ -1520,7 +1527,11 @@ auditpol /set /subcategory:"{0CCE922B-69AE-11D9-BED3-505054503030}" /success:ena
 
 # Include command line in process creation events
 # Включать командную строку в событиях создания процесса
-$ProcessCreation = auditpol /get /subcategory:"{0CCE922B-69AE-11D9-BED3-505054503030}" /r | ConvertFrom-Csv | Select-Object -Property "Inclusion Setting"
+if ($RU)
+{
+	$OutputEncoding = [System.Console]::OutputEncoding = [System.Console]::InputEncoding = [System.Text.Encoding]::UTF8
+}
+$ProcessCreation = auditpol /get /subcategory:"{0CCE922B-69AE-11D9-BED3-505054503030}" /r | ConvertFrom-Csv | Select-Object -ExpandProperty "Inclusion Setting"
 if ($ProcessCreation -ne "No Auditing")
 {
 	New-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit -Name ProcessCreationIncludeCmdLine_Enabled -PropertyType DWord -Value 1 -Force
@@ -1532,8 +1543,8 @@ if (-not (Test-Path -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\M
 {
 	New-Item -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging\ModuleNames -Force
 }
+New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging -Name EnableModuleLogging -PropertyType DWord -Value 1 -Force
 New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging\ModuleNames -Name * -PropertyType String -Value * -Force
-New-ItemProperty -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging\ModuleNames -Name EnableModuleLogging -PropertyType DWord -Value 1 -Force
 
 # Turn on logging of all PowerShell script input to the Microsoft-Windows-PowerShell/Operational event log
 # Включить регистрацию всех вводимых сценариев PowerShell в журнале событий Microsoft-Windows-PowerShell/Operational
