@@ -21,7 +21,7 @@
 .EXAMPLE
 	PS C:\> & '.\Win 8.1.ps1'
 .NOTES
-	Version: v4.3
+	Version: v4.3.1
 	Date: 11.06.2020
 	Written by: farag & oZ-Zo
 	Thanks to all http://forum.ru-board.com members involved
